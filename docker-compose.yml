@@ -1,0 +1,48 @@
+version: '3.9'
+services:
+  ai-tarot-app:
+    build: .
+    container_name: ai-tarot-app
+    restart: always
+    environment:
+      NODE_ENV: test
+      MOCK_MODE: 'true'
+      DB_HOST: mysql_db
+      DB_PORT: '3306'
+      DB_NAME: tarot_db
+      DB_USER: root
+      DB_PASSWORD: password
+      REDIS_HOST: redis_cache
+      REDIS_PORT: '6379'
+      CORS_ORIGIN: '*'
+    depends_on:
+      - mysql_db
+      - redis_cache
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./server_logs:/app/logs
+
+  mysql_db:
+    image: mysql:8.0
+    container_name: ai-tarot-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: tarot_db
+      MYSQL_USER: tarot
+      MYSQL_PASSWORD: tarot_pass
+    ports:
+      - '3306:3306'
+    volumes:
+      - db_data:/var/lib/mysql
+
+  redis_cache:
+    image: redis:alpine
+    container_name: ai-tarot-redis
+    restart: always
+    ports:
+      - '6379:6379'
+
+volumes:
+  db_data:

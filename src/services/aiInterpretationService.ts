@@ -46,6 +46,9 @@ export class AIInterpretationService {
    */
   async generateInterpretation(request: AIInterpretationRequest): Promise<AIInterpretationResponse> {
     try {
+      if (String(process.env.MOCK_MODE).toLowerCase() === 'true') {
+        return this.getMockInterpretation(request);
+      }
       // 构建提示词
       const prompt = this.buildPrompt(request);
       

@@ -17,7 +17,7 @@ import userRoutes from './controllers/userController';
 import paymentRoutes from './controllers/paymentController';
 import aiRoutes from './controllers/aiController';
 import seedCards from './utils/seeder';
-import { initializeDatabase } from './utils/database';
+import { initializeDatabase, testConnection } from './utils/database';
 
 // 中间件导入
 import { errorHandler } from './middleware/errorHandler';
@@ -102,8 +102,18 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // 启动服务器
+const waitForDatabase = async (maxRetries: number, delayMs: number): Promise<void> => {
+  for (let i = 0; i < maxRetries; i++) {
+    const ok = await testConnection();
+    if (ok) return;
+    await new Promise(r => setTimeout(r, delayMs));
+  }
+  throw new Error('Database connection failed after retries');
+};
+
 const startServer = async () => {
   try {
+    await waitForDatabase(10, 3000);
     await initializeDatabase();
     await seedCards();
     // 初始化Redis缓存

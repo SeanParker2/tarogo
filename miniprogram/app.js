@@ -11,10 +11,15 @@ App({
     }
 
   // 全局数据
+  const acc = wx.getAccountInfoSync?.()
+  const env = acc?.miniProgram?.envVersion || 'develop'
+  const testBase = 'http://localhost:3000/api'
+  const prodBase = 'https://api.tarogo.com/api'
+  const apiBase = (env === 'release') ? prodBase : testBase
   this.globalData = {
     userInfo: null,
     isVip: false,
-    apiBase: 'http://localhost:3000/api',
+    apiBase,
     systemInfo: wx.getSystemInfoSync(),
     dailyTemplateId: ''
   };

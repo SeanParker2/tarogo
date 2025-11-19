@@ -135,7 +135,8 @@ router.post('/prepay', async (req: any, res: any) => {
     const { packageId, description = 'AI塔罗占卜' } = req.body;
     if (!userId) return res.status(401).json({ status: 'error', message: '未授权' })
     if (!packageId) return res.status(400).json({ status: 'error', message: '缺少套餐ID' });
-    if (!config.wechat?.appId || !config.wechat?.mchId || !config.wechat?.merchantPrivateKey || !config.wechat?.merchantSerialNo || !config.wechat?.notifyUrl) {
+    const mock = String(process.env.MOCK_MODE).toLowerCase() === 'true'
+    if (!mock && (!config.wechat?.appId || !config.wechat?.mchId || !config.wechat?.merchantPrivateKey || !config.wechat?.merchantSerialNo || !config.wechat?.notifyUrl)) {
       return res.status(500).json({ status: 'error', message: '微信支付未配置完整' });
     }
 
@@ -145,7 +146,12 @@ router.post('/prepay', async (req: any, res: any) => {
 
     const outTradeNo = 'TR' + Date.now()
     const amount = 100
-    await query('INSERT INTO orders (user_id, package_id, out_trade_no, amount, status) VALUES (?, ?, ?, ?, ?)', [userId, packageId, outTradeNo, amount, 'pending']).catch(()=>{})
+    if (mock) {
+      const pkg = `prepay_id=MOCK_${Date.now()}`
+      await query('INSERT INTO orders (user_id, package_id, out_trade_no, amount, status, prepay_id) VALUES (?, ?, ?, ?, ?, ?)', [userId, packageId, outTradeNo, amount, 'pending', pkg]).catch(()=>{})
+      const ts = String(Math.floor(Date.now()/1000))
+      return res.json({ status: 'success', data: { timeStamp: ts, nonceStr: 'mocknonce', package: pkg, signType: 'RSA', paySign: 'mocksign' } })
+    }
 
     const url = 'https://api.mch.weixin.qq.com/v3/pay/transactions/jsapi'
     const body = {
@@ -175,6 +181,27 @@ router.post('/prepay', async (req: any, res: any) => {
     res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message });
   }
 });
+
+const applyPaymentSuccess = async (outTradeNo: string) => {
+  await transaction(async (conn) => {
+    const [rows]: any = await conn.execute('SELECT status, user_id, package_id FROM orders WHERE out_trade_no = ? FOR UPDATE', [outTradeNo])
+    const row = rows?.[0]
+    if (!row) return
+    if (row.status === 'paid') return
+    await conn.execute('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE out_trade_no = ?', ['paid', outTradeNo])
+    const userId = row.user_id
+    const pkg = Number(row.package_id || 1)
+    if (userId) {
+      if (pkg === 2) {
+        await conn.execute('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 365 DAY) WHERE id = ?', [userId])
+      } else if (pkg === 3) {
+        await conn.execute('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 36500 DAY) WHERE id = ?', [userId])
+      } else {
+        await conn.execute('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE id = ?', [userId])
+      }
+    }
+  })
+}
 
 router.post('/notify', async (req: any, res: any) => {
   try {
@@ -221,25 +248,21 @@ router.post('/notify', async (req: any, res: any) => {
     if (!outTradeNo || !transactionId) {
       return res.status(400).json({ status: 'error', message: '通知数据缺少交易信息' })
     }
-    await transaction(async (conn) => {
-      const [rows]: any = await conn.execute('SELECT status, user_id, package_id FROM orders WHERE out_trade_no = ? FOR UPDATE', [outTradeNo])
-      const row = rows?.[0]
-      if (!row) return
-      if (row.status === 'paid') return
-      await conn.execute('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE out_trade_no = ?', ['paid', outTradeNo])
-      const userId = row.user_id
-      const pkg = Number(row.package_id || 1)
-      if (userId) {
-        if (pkg === 2) {
-          await conn.execute('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 365 DAY) WHERE id = ?', [userId])
-        } else if (pkg === 3) {
-          await conn.execute('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 36500 DAY) WHERE id = ?', [userId])
-        } else {
-          await conn.execute('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE id = ?', [userId])
-        }
-      }
-    })
+    await applyPaymentSuccess(outTradeNo)
     res.status(200).send('SUCCESS')
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
+
+router.get('/mock-notify/:outTradeNo', async (req: any, res: any) => {
+  try {
+    const mock = String(process.env.MOCK_MODE).toLowerCase() === 'true'
+    if (!mock) return res.status(400).json({ status: 'error', message: '非Mock模式' })
+    const { outTradeNo } = req.params
+    if (!outTradeNo) return res.status(400).json({ status: 'error', message: '缺少订单号' })
+    await applyPaymentSuccess(outTradeNo)
+    res.json({ status: 'success', data: { outTradeNo, status: 'paid' } })
   } catch (error) {
     res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
   }
