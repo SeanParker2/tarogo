@@ -1,4 +1,7 @@
 import { Router } from 'express';
+import crypto from 'crypto';
+import { query } from '../utils/database';
+import { config } from '../config';
 
 const router = Router();
 
@@ -120,6 +123,36 @@ router.get('/packages', async (req, res) => {
       packages: mockPackages
     }
   });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message });
+  }
+});
+
+router.post('/prepay', async (req: any, res: any) => {
+  try {
+    const { packageId } = req.body;
+    if (!packageId) return res.status(400).json({ status: 'error', message: '缺少套餐ID' });
+    if (!config.wechat?.appId) return res.status(500).json({ status: 'error', message: '微信支付未配置' });
+    const prepayId = 'mock_prepay_' + Date.now();
+    const timeStamp = String(Math.floor(Date.now()/1000));
+    const nonceStr = crypto.randomBytes(16).toString('hex');
+    const pkg = `prepay_id=${prepayId}`;
+    const signType = 'RSA';
+    const paySign = crypto.createHash('sha256').update(`${timeStamp}\n${nonceStr}\n${pkg}\n`).digest('hex');
+    await query('INSERT INTO orders (user_id, package_id, status) VALUES (?, ?, ?)', [req.user?.id || null, packageId, 'pending']).catch(()=>{})
+    res.json({ status: 'success', data: { timeStamp, nonceStr, package: pkg, signType, paySign } });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message });
+  }
+});
+
+router.post('/notify', async (req: any, res: any) => {
+  try {
+    const { out_trade_no } = req.body || {}
+    if (out_trade_no) {
+      await query('UPDATE orders SET status=? WHERE id=?', ['paid', out_trade_no]).catch(()=>{})
+    }
+    res.send('SUCCESS');
   } catch (error) {
     res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message });
   }

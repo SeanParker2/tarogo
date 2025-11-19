@@ -74,7 +74,6 @@ app.get('/api/performance/metrics', performanceMetricsMiddleware);
 app.post('/api/performance/reset', resetPerformanceMiddleware);
 
 // API路由
-initializeDatabase().then(() => seedCards()).catch(() => {})
 app.use('/api/auth', authRoutes);
 app.use('/api/divination', authMiddleware, divinationRoutes);
 app.use('/api/cards', cardRoutes);
@@ -89,6 +88,8 @@ app.use(errorHandler);
 // 启动服务器
 const startServer = async () => {
   try {
+    await initializeDatabase();
+    await seedCards();
     // 初始化Redis缓存
     await cacheService.connect();
     logger.info('Redis cache service connected');

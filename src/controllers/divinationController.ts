@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { createRecord, addCardResults, getTypeIdByName, getHistory, getResult } from '../models/RecordModel';
+import { getById } from '../models/UserModel';
 
 const router = Router();
 
@@ -40,6 +41,13 @@ router.post('/create', async (req: any, res: any) => {
         status: 'error',
         message: `占卜类型 ${type} 需要 ${expectedCardCount} 张牌，但提供了 ${cards.length} 张`
       });
+    }
+
+    const advanced = ['celtic','career']
+    const user = await getById(Number(userId))
+    const isVip = !!user?.isVip
+    if (advanced.includes(type) && !isVip) {
+      return res.status(403).json({ status: 'error', message: '该牌阵为VIP专享，请升级会员' })
     }
 
     const typeId = await getTypeIdByName(type);

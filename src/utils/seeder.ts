@@ -107,15 +107,43 @@ const buildMinor = () => {
 }
 
 export const seedCards = async () => {
-  const rows: any = await query('SELECT COUNT(1) AS total FROM tarot_cards')
-  const total = rows[0]?.total || 0
-  if (total > 0) return
+  const totalRows: any = await query('SELECT COUNT(1) AS total FROM tarot_cards')
+  const total = totalRows[0]?.total || 0
+  const majorsRows: any = await query("SELECT COUNT(1) AS c FROM tarot_cards WHERE card_type='major'")
+  const minorsCups: any = await query("SELECT COUNT(1) AS c FROM tarot_cards WHERE card_type='minor' AND suit='cups'")
+  const minorsPent: any = await query("SELECT COUNT(1) AS c FROM tarot_cards WHERE card_type='minor' AND suit='pentacles'")
+  const minorsSwords: any = await query("SELECT COUNT(1) AS c FROM tarot_cards WHERE card_type='minor' AND suit='swords'")
+  const minorsWands: any = await query("SELECT COUNT(1) AS c FROM tarot_cards WHERE card_type='minor' AND suit='wands'")
+
+  const needSeed = total < 78 || majorsRows[0]?.c < 22 || minorsCups[0]?.c < 14 || minorsPent[0]?.c < 14 || minorsSwords[0]?.c < 14 || minorsWands[0]?.c < 14
   const data = [...buildMajor(), ...buildMinor()]
+
+  if (!needSeed) {
+    for (const d of data) {
+      const exist: any = await query('SELECT id FROM tarot_cards WHERE english_name = ? LIMIT 1', [d.english_name])
+      if (exist.length) {
+        await query(
+          'UPDATE tarot_cards SET name=?, card_type=?, suit=?, number=?, roman_numeral=?, image_url=?, thumbnail_url=?, upright_keywords=?, reversed_keywords=?, upright_meaning=?, reversed_meaning=?, description=?, element=?, planet=?, zodiac_sign=?, season=?, direction=?, color=? WHERE id=?',
+          [d.name, d.card_type, d.suit, d.number, d.roman_numeral, d.image_url, d.thumbnail_url, d.upright_keywords, d.reversed_keywords, d.upright_meaning, d.reversed_meaning, d.description, d.element, d.planet, d.zodiac_sign, d.season, d.direction, d.color, exist[0].id]
+        )
+      }
+    }
+    return
+  }
+
   for (const d of data) {
-    await query(
-      'INSERT INTO tarot_cards (name, english_name, card_type, suit, number, roman_numeral, image_url, thumbnail_url, upright_keywords, reversed_keywords, upright_meaning, reversed_meaning, description, element, planet, zodiac_sign, season, direction, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [d.name, d.english_name, d.card_type, d.suit, d.number, d.roman_numeral, d.image_url, d.thumbnail_url, d.upright_keywords, d.reversed_keywords, d.upright_meaning, d.reversed_meaning, d.description, d.element, d.planet, d.zodiac_sign, d.season, d.direction, d.color]
-    )
+    const exist: any = await query('SELECT id FROM tarot_cards WHERE english_name = ? LIMIT 1', [d.english_name])
+    if (exist.length) {
+      await query(
+        'UPDATE tarot_cards SET name=?, card_type=?, suit=?, number=?, roman_numeral=?, image_url=?, thumbnail_url=?, upright_keywords=?, reversed_keywords=?, upright_meaning=?, reversed_meaning=?, description=?, element=?, planet=?, zodiac_sign=?, season=?, direction=?, color=? WHERE id=?',
+        [d.name, d.card_type, d.suit, d.number, d.roman_numeral, d.image_url, d.thumbnail_url, d.upright_keywords, d.reversed_keywords, d.upright_meaning, d.reversed_meaning, d.description, d.element, d.planet, d.zodiac_sign, d.season, d.direction, d.color, exist[0].id]
+      )
+    } else {
+      await query(
+        'INSERT INTO tarot_cards (name, english_name, card_type, suit, number, roman_numeral, image_url, thumbnail_url, upright_keywords, reversed_keywords, upright_meaning, reversed_meaning, description, element, planet, zodiac_sign, season, direction, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [d.name, d.english_name, d.card_type, d.suit, d.number, d.roman_numeral, d.image_url, d.thumbnail_url, d.upright_keywords, d.reversed_keywords, d.upright_meaning, d.reversed_meaning, d.description, d.element, d.planet, d.zodiac_sign, d.season, d.direction, d.color]
+      )
+    }
   }
 }
 

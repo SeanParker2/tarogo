@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { aiInterpretationService } from '../services/aiInterpretationService';
+import jwt, { Secret } from 'jsonwebtoken';
+import { config } from '../config';
 
 const router = Router();
 
@@ -33,11 +35,23 @@ router.post('/interpret', async (req: any, res: any): Promise<void> => {
     });
   }
 
+    let lengthLimit = 500
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '')
+      if (token) {
+        const payload: any = jwt.verify(token, config.jwt.secret as Secret)
+        // 简单规则：VIP更长
+        const userRow: any = await (await import('../models/UserModel')).getById(Number(payload.id))
+        if (userRow?.isVip) lengthLimit = 800; else lengthLimit = 200
+      }
+    } catch(e) {}
+
     const interpretation = await aiInterpretationService.generateInterpretation({
       cards,
       question: question.trim(),
       type,
-      userInfo
+      userInfo,
+      lengthLimit
     });
 
     return res.json({ status: 'success', data: interpretation });
@@ -46,6 +60,33 @@ router.post('/interpret', async (req: any, res: any): Promise<void> => {
     return res.status(500).json({ status: 'error', message: 'AI解读服务暂时不可用，请稍后重试' });
   }
 });
+
+router.post('/interpret/stream', async (req: any, res: any): Promise<void> => {
+  try {
+    const { cards, question, type, userInfo } = req.body;
+    let lengthLimit = 500
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '')
+      if (token) {
+        const payload: any = jwt.verify(token, config.jwt.secret as Secret)
+        const userRow: any = await (await import('../models/UserModel')).getById(Number(payload.id))
+        if (userRow?.isVip) lengthLimit = 800; else lengthLimit = 200
+      }
+    } catch(e) {}
+    const result = await aiInterpretationService.generateInterpretation({ cards, question, type, userInfo, lengthLimit })
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+    res.setHeader('Transfer-Encoding', 'chunked')
+    const text = result.interpretation
+    const chunks = text.match(/.{1,30}/g) || [text]
+    for (const ch of chunks) {
+      res.write(ch)
+      await new Promise(r => setTimeout(r, 50))
+    }
+    res.end()
+  } catch (error) {
+    res.status(500).end('AI解读服务暂时不可用')
+  }
+})
 
 /**
  * @route   POST /api/ai/batch-interpret

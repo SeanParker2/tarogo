@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getCards, getCardById, countCards } from '../models/CardModel';
 import { query } from '../utils/database';
+import { cacheService } from '../services/cacheService';
 
 const router = Router();
 
@@ -135,5 +136,21 @@ router.get('/search', async (req: any, res: any): Promise<any> => {
     });
   }
 });
+
+router.get('/daily', async (req: any, res: any) => {
+  try {
+    const userId = req.user?.id || req.ip || 'guest'
+    const date = new Date().toISOString().slice(0,10)
+    const key = `daily_card_user_${userId}_${date}`
+    const cached = await cacheService.get<any>(key)
+    if (cached) return res.json({ status: 'success', data: cached })
+    const rows: any = await query('SELECT id, name, english_name AS englishName, card_type AS type, image_url AS imageUrl, thumbnail_url AS thumbnailUrl FROM tarot_cards ORDER BY RAND() LIMIT 1')
+    const card = { ...rows[0], isReversed: Math.random() > 0.5 }
+    await cacheService.set(key, card, { ttl: 24 * 60 * 60 })
+    res.json({ status: 'success', data: card })
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
 
 export default router;

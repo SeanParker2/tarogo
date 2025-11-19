@@ -15,6 +15,7 @@ interface AIInterpretationRequest {
     birthDate?: string;
     gender?: string;
   };
+  lengthLimit?: number;
 }
 
 interface AIInterpretationResponse {
@@ -87,6 +88,7 @@ export class AIInterpretationService {
       'career': '事业牌阵'
     };
 
+    const limit = request.lengthLimit || 500
     return `你是一位经验丰富且富有洞察力的塔罗牌占卜师。请基于用户抽到的塔罗牌，结合他们的问题，提供专业、温暖、有启发性的解读。
 
 占卜类型：${typeDescriptions[type as keyof typeof typeDescriptions] || type}
@@ -105,7 +107,7 @@ ${userInfo.gender ? `- 性别：${userInfo.gender}` : ''}` : ''}
 2. 牌阵整体的综合解读
 3. 针对用户问题的具体建议
 4. 用温暖、积极、有启发性的语言表达
-5. 字数控制在300-500字之间
+5. 字数控制在${Math.max(100, Math.min(1200, limit))}字左右
 
 请以JSON格式返回，包含以下字段：
 {

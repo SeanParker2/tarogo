@@ -45,13 +45,37 @@ Page({
 
   fetchInterpretation() {
     const cardsPayload = this.data.cards.map((c, i) => ({ id: c.id, name: c.name, isReversed: !!c.isReversed, position: c.position || i + 1, positionName: c.positionName || '', imageUrl: c.imageUrl || c.thumbnailUrl || '' }))
-    app.request({ url: '/ai/interpret', method: 'POST', data: { cards: cardsPayload, question: this.data.question, type: this.data.spread } }).then(res => {
-      const text = res.data?.interpretation || res.data?.aiInterpretation || ''
-      const nodes = this.toNodes(text)
-      this.setData({ aiNodes: nodes, aiRaw: text, aiLoading: false })
-      this.saveHistory(text)
-      this.saveServer(text)
-    }).catch(() => { this.setData({ aiLoading: false }); app.showToast('解读失败，请稍后重试') })
+    this.fetchInterpretationStream(cardsPayload)
+  },
+
+  fetchInterpretationStream(cardsPayload) {
+    const that = this
+    let acc = ''
+    wx.request({
+      url: `${app.globalData.apiBase}/ai/interpret/stream`,
+      method: 'POST',
+      enableChunked: true,
+      data: { cards: cardsPayload, question: this.data.question, type: this.data.spread },
+      header: { 'Authorization': app.globalData.token ? `Bearer ${app.globalData.token}` : '' },
+      onChunkReceived(res) {
+        const txt = res?.data || ''
+        if (txt) {
+          acc += txt
+          const nodes = that.toNodes(acc)
+          that.setData({ aiNodes: nodes, aiRaw: acc })
+          try {
+            const animations = require('../../utils/animations.js')
+            animations.particleSystem.flicker?.()
+          } catch(e) {}
+        }
+      },
+      success() {
+        that.setData({ aiLoading: false })
+        that.saveHistory(acc)
+        that.saveServer(acc)
+      },
+      fail() { that.setData({ aiLoading: false }); app.showToast('解读失败，请稍后重试') }
+    })
   },
 
   toNodes(md) {

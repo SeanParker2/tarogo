@@ -139,6 +139,12 @@ class ParticleSystem {
       }
     });
   }
+  flicker() {
+    if (!this.ctx || !this.canvas) return;
+    const w = this.canvas.width, h = this.canvas.height;
+    this.ctx.fillStyle = `rgba(255,255,255,${0.05 + Math.random()*0.15})`;
+    this.ctx.fillRect(0, 0, w, h);
+  }
 
   /**
    * 设置画布

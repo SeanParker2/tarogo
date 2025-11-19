@@ -5,6 +5,7 @@ import { AppError } from '../utils/AppError';
 import crypto from 'crypto';
 import { aiInterpretationService } from '../services/aiInterpretationService';
 import { getCardById } from '../models/CardModel';
+import { getById } from '../models/UserModel';
 import { createRecord, addCardResults, getTypeIdByName } from '../models/RecordModel';
 
 interface DivinationRequest {
@@ -77,7 +78,9 @@ class DivinationController {
           const info: any = await getCardById(c.id)
           return { name: info?.name || `卡牌${c.id}` , englishName: info?.englishName || '', position: String(c.position), isReversed: !!c.isReversed }
         }))
-        const payload = { cards: enriched, question: divinationRequest.question, type: divinationRequest.spreadType, userInfo: { nickname: '微信用户' } }
+        const user = await getById(Number(userId))
+        const lengthLimit = user?.isVip ? 800 : 200
+        const payload = { cards: enriched, question: divinationRequest.question, type: divinationRequest.spreadType, userInfo: { nickname: '微信用户' }, lengthLimit }
         interpretation = await aiInterpretationService.generateInterpretation(payload)
       } catch (e) {}
       

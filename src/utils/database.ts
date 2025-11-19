@@ -197,6 +197,7 @@ export const initializeDatabase = async () => {
 
   try {
     await query(createUsersTable);
+    try { await query('ALTER TABLE users ADD COLUMN last_login_at DATETIME'); } catch(e) {}
     await query(createTarotCardsTable);
     await query(createDivinationTypesTable);
     await query(createDivinationRecordsTable);

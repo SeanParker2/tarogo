@@ -2,7 +2,7 @@ import { Router } from 'express';
 import axios from 'axios';
 import jwt, { Secret } from 'jsonwebtoken';
 import config from '../config';
-import { getByOpenId, createUser } from '../models/UserModel';
+import { getByOpenId, createUser, updateLastLogin } from '../models/UserModel';
 
 const router = Router();
 
@@ -31,6 +31,7 @@ router.post('/login', async (req: any, res: any) => {
     if (!user) {
       user = await createUser({ openid: data.openid, nickname: userInfo?.nickName, avatarUrl: userInfo?.avatarUrl })
     }
+    await updateLastLogin(data.openid)
     const token = jwt.sign({ id: user.id, openid: user.openid }, config.jwt.secret as Secret, { expiresIn: config.jwt.expiresIn as any })
     res.json({ status: 'success', data: { token, userId: user.id, isVip: !!user.isVip, userInfo: { nickname: user.nickname || '神秘用户', avatarUrl: user.avatarUrl || '/images/default-avatar.png' } } })
   } catch (error) {
