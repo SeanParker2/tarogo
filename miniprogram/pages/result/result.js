@@ -8,7 +8,8 @@ Page({
     spreadName: '',
     aiLoading: true,
     aiNodes: [],
-    aiRaw: ''
+    aiRaw: '',
+    followUp: ''
   },
 
   onLoad(options) {
@@ -123,6 +124,30 @@ Page({
       const nodes = this.toNodes(d.aiInterpretation || '')
       this.setData({ cards: d.cards || [], question: d.question || '', spread: d.type || '', spreadName, aiNodes: nodes, aiRaw: d.aiInterpretation || '', aiLoading: false })
     } catch(e) { app.showToast('加载记录失败') }
+  },
+
+  onFollowUpInput(e) { this.setData({ followUp: e.detail.value }) },
+  sendFollowUp() {
+    const q = this.data.followUp.trim(); if (!q) return;
+    const that = this
+    let acc = ''
+    wx.request({
+      url: `${app.globalData.apiBase}/ai/chat/stream`,
+      method: 'POST',
+      enableChunked: true,
+      data: { recordId: this.options?.recordId, question: q },
+      header: { 'Authorization': app.globalData.token ? `Bearer ${app.globalData.token}` : '' },
+      onChunkReceived(res) {
+        const txt = res?.data || ''
+        if (txt) {
+          acc += txt
+          const nodes = that.toNodes(acc)
+          that.setData({ aiNodes: nodes, aiRaw: acc })
+        }
+      },
+      success() { that.setData({ followUp: '' }) },
+      fail() { app.showToast('追问失败，请稍后重试') }
+    })
   },
 
   goHome() {

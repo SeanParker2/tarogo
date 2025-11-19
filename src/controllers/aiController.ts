@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { aiInterpretationService } from '../services/aiInterpretationService';
 import jwt, { Secret } from 'jsonwebtoken';
 import { config } from '../config';
+import { getResult, getRecentSummaries } from '../models/RecordModel';
 
 const router = Router();
 
@@ -85,6 +86,44 @@ router.post('/interpret/stream', async (req: any, res: any): Promise<void> => {
     res.end()
   } catch (error) {
     res.status(500).end('AI解读服务暂时不可用')
+  }
+})
+
+router.post('/chat/stream', async (req: any, res: any): Promise<void> => {
+  try {
+    const { recordId, question } = req.body
+    let userId: number | null = null
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '')
+      if (token) {
+        const payload: any = jwt.verify(token, config.jwt.secret as Secret)
+        userId = Number(payload.id)
+      }
+    } catch(e) {}
+    let context = ''
+    if (userId) {
+      const recents = await getRecentSummaries(userId, 3)
+      context = recents.map((r: any) => `【问题】${r.question}\n【摘要】${r.summary}`).join('\n\n')
+    }
+    if (recordId) {
+      const current = await getResult(Number(recordId))
+      if (current) {
+        context = `【当前占卜】${current.question}\n${(current.aiInterpretation || '').slice(0, 300)}\n\n` + context
+      }
+    }
+    const merged = `用户追问：${question}\n\n历史上下文：\n${context}`
+    const result = await aiInterpretationService.generateInterpretation({ cards: [], question: merged, type: 'followup', userInfo: { nickname: '微信用户' }, lengthLimit: 600 })
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+    res.setHeader('Transfer-Encoding', 'chunked')
+    const text = result.interpretation
+    const chunks = text.match(/.{1,30}/g) || [text]
+    for (const ch of chunks) {
+      res.write(ch)
+      await new Promise(r => setTimeout(r, 50))
+    }
+    res.end()
+  } catch (error) {
+    res.status(500).end('AI追问服务暂时不可用')
   }
 })
 

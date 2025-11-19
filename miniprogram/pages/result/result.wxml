@@ -32,4 +32,8 @@
       <button class="btn home" bindtap="goHome">返回首页</button>
     </view>
   </view>
+  <view class="followup">
+    <input class="ask-input" placeholder="继续追问…" value="{{followUp}}" bindinput="onFollowUpInput" />
+    <button class="ask-btn" bindtap="sendFollowUp">发送</button>
+  </view>
 </view>

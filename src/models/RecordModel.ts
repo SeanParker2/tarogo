@@ -43,3 +43,8 @@ export const getResult = async (recordId: number) => {
   if (!rec) return null
   return { ...rec, cards }
 }
+
+export const getRecentSummaries = async (userId: number, limit = 3) => {
+  const rows: any = await query(`SELECT id, question, ai_interpretation AS aiInterpretation FROM divination_records WHERE user_id = ? AND ai_interpretation IS NOT NULL ORDER BY created_at DESC LIMIT ?`, [userId, limit])
+  return rows.map((r: any) => ({ id: r.id, question: r.question, summary: (r.aiInterpretation || '').slice(0, 200) }))
+}

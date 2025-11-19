@@ -187,21 +187,7 @@ router.post('/create', async (req: any, res: any) => {
     expireAt: new Date(Date.now() + 30 * 60 * 1000).toISOString() // 30分钟后过期
   };
 
-  res.json({
-    status: 'success',
-    data: {
-      order: mockOrder,
-      paymentParams: {
-        // 这里应该是微信支付参数
-        appId: 'mock_wechat_appid',
-        timeStamp: Math.floor(Date.now() / 1000).toString(),
-        nonceStr: Math.random().toString(36).substr(2, 16),
-        package: 'prepay_id=mock_prepay_id',
-        signType: 'MD5',
-        paySign: 'mock_pay_sign'
-      }
-    }
-  });
+  return res.status(404).json({ status: 'error', message: '未实现' })
 });
 
 /**

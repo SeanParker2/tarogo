@@ -22,3 +22,6 @@
 .btn.home { color: #fff; background: #8b5cf6; }
 
 @media (max-width: 420px) { .cards { grid-template-columns: repeat(2, 1fr); } }
+.followup { position: fixed; left: 0; right: 0; bottom: 100rpx; display: flex; gap: 12rpx; padding: 16rpx 20rpx; }
+.ask-input { flex: 1; height: 72rpx; background: rgba(255,255,255,0.1); color: #fff; border-radius: 12rpx; padding: 0 16rpx }
+.ask-btn { width: 160rpx; height: 72rpx; line-height: 72rpx; text-align: center; border-radius: 12rpx; background: #22d3ee; color: #0f172a }
