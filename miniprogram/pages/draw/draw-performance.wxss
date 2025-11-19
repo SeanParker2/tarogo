@@ -1,0 +1,268 @@
+/* 性能优化相关样式 */
+
+/* 虚拟列表容器 */
+.virtual-scroll-container {
+  position: relative;
+  width: 100%;
+  height: 600rpx;
+  overflow: hidden;
+}
+
+/* 占位图片 */
+.card-image {
+  transition: opacity 0.3s ease;
+}
+
+.card-image[lazy-load] {
+  opacity: 0.3;
+}
+
+.card-image[loaded] {
+  opacity: 1;
+}
+
+/* 加载占位符 */
+.placeholder-card {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading-shimmer 1.5s infinite;
+}
+
+@keyframes loading-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* 性能监控面板 */
+.performance-panel {
+  position: fixed;
+  top: 100rpx;
+  right: 20rpx;
+  width: 300rpx;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 12rpx;
+  padding: 20rpx;
+  z-index: 1000;
+  backdrop-filter: blur(10rpx);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.panel-title {
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: bold;
+}
+
+.close-btn {
+  width: 40rpx;
+  height: 40rpx;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 32rpx;
+  line-height: 1;
+  padding: 0;
+}
+
+.panel-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.metric-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metric-label {
+  color: #ccc;
+  font-size: 20rpx;
+}
+
+.metric-value {
+  color: #4caf50;
+  font-size: 20rpx;
+  font-weight: bold;
+}
+
+.metric-value.slow {
+  color: #ff9800;
+}
+
+.metric-value.very-slow {
+  color: #f44336;
+}
+
+/* 加载遮罩 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.loading-spinner {
+  width: 60rpx;
+  height: 60rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+  border-top: 4rpx solid #9c27b0;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: #fff;
+  font-size: 28rpx;
+}
+
+/* 性能优化按钮 */
+.performance-toggle {
+  position: fixed;
+  bottom: 100rpx;
+  right: 20rpx;
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: #9c27b0;
+  border: none;
+  box-shadow: 0 4rpx 20rpx rgba(156, 39, 176, 0.4);
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.performance-toggle:active {
+  transform: scale(0.95);
+}
+
+.performance-icon {
+  color: #fff;
+  font-size: 32rpx;
+}
+
+/* 缓存状态指示器 */
+.cache-indicator {
+  position: fixed;
+  top: 200rpx;
+  right: 20rpx;
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  background: #4caf50;
+  z-index: 998;
+  opacity: 0.8;
+}
+
+.cache-indicator.hit {
+  background: #4caf50;
+  animation: cache-hit 0.5s ease;
+}
+
+.cache-indicator.miss {
+  background: #ff9800;
+  animation: cache-miss 0.5s ease;
+}
+
+@keyframes cache-hit {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.5); }
+  100% { transform: scale(1); }
+}
+
+@keyframes cache-miss {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.8); }
+  100% { transform: scale(1); }
+}
+
+/* 滚动性能优化 */
+.cards-grid {
+  will-change: transform;
+}
+
+.card-item {
+  will-change: transform, opacity;
+  transform: translateZ(0); /* 启用硬件加速 */
+}
+
+/* 图片加载动画 */
+.image-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 网络请求状态 */
+.network-status {
+  position: fixed;
+  top: 20rpx;
+  right: 20rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 20rpx;
+  z-index: 997;
+  transition: all 0.3s ease;
+}
+
+.network-status.online {
+  background: #4caf50;
+  color: #fff;
+}
+
+.network-status.offline {
+  background: #f44336;
+  color: #fff;
+}
+
+.network-status.slow {
+  background: #ff9800;
+  color: #fff;
+}
+
+/* 批量加载指示器 */
+.batch-loader {
+  position: absolute;
+  bottom: 20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  padding: 10rpx 20rpx;
+  border-radius: 20rpx;
+  font-size: 20rpx;
+  z-index: 996;
+}

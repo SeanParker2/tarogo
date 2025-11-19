@@ -1,0 +1,318 @@
+/* 首页样式 */
+.header-banner {
+  position: relative;
+  background: linear-gradient(135deg, #6B46C1 0%, #9333EA 100%);
+  border-radius: 32rpx;
+  padding: 48rpx 32rpx;
+  margin-bottom: 48rpx;
+  overflow: hidden;
+  box-shadow: 0 20rpx 40rpx rgba(107, 70, 193, 0.3);
+}
+
+.banner-content {
+  position: relative;
+  z-index: 2;
+}
+
+.banner-title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 16rpx;
+  text-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.2);
+}
+
+.banner-subtitle {
+  display: block;
+  font-size: 28rpx;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+}
+
+.banner-decoration {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 200rpx;
+  height: 200rpx;
+  z-index: 1;
+}
+
+.star {
+  position: absolute;
+  width: 8rpx;
+  height: 8rpx;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 2s infinite;
+}
+
+.star-1 {
+  top: 20%;
+  right: 30%;
+  animation-delay: 0s;
+}
+
+.star-2 {
+  top: 60%;
+  right: 60%;
+  animation-delay: 0.7s;
+}
+
+.star-3 {
+  top: 80%;
+  right: 20%;
+  animation-delay: 1.4s;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* 功能卡片 */
+.feature-cards {
+  margin-bottom: 48rpx;
+}
+
+.feature-card {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rpx;
+  background: linear-gradient(90deg, #6B46C1, #9333EA);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.feature-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.feature-card:active::before {
+  transform: scaleX(1);
+}
+
+.card-icon {
+  width: 80rpx;
+  height: 80rpx;
+  background: linear-gradient(135deg, #F3F4F6, #E5E7EB);
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 32rpx;
+  flex-shrink: 0;
+}
+
+.card-icon .icon {
+  font-size: 40rpx;
+}
+
+.card-content {
+  flex: 1;
+}
+
+.card-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 8rpx;
+}
+
+.card-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #6B7280;
+  line-height: 1.4;
+}
+
+.card-arrow {
+  width: 48rpx;
+  height: 48rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F3F4F6;
+  border-radius: 50%;
+  margin-left: 24rpx;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.card-arrow .arrow {
+  font-size: 28rpx;
+  color: #6B7280;
+  transition: transform 0.3s ease;
+}
+
+.feature-card:active .card-arrow {
+  background: #6B46C1;
+}
+
+.feature-card:active .card-arrow .arrow {
+  color: white;
+  transform: translateX(4rpx);
+}
+
+/* 今日塔罗 */
+.daily-tarot {
+  background: white;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  margin-bottom: 48rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.section-more {
+  font-size: 26rpx;
+  color: #6B46C1;
+  cursor: pointer;
+}
+
+.daily-card {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #F9FAFB, #F3F4F6);
+  border-radius: 20rpx;
+  padding: 24rpx;
+}
+
+.card-image {
+  width: 120rpx;
+  height: 200rpx;
+  border-radius: 16rpx;
+  margin-right: 24rpx;
+  box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.1);
+}
+
+.card-info {
+  flex: 1;
+}
+
+.card-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1F2937;
+  margin-bottom: 12rpx;
+}
+
+.card-meaning {
+  display: block;
+  font-size: 24rpx;
+  color: #6B7280;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 快速提问 */
+.quick-question {
+  background: white;
+  border-radius: 24rpx;
+  padding: 32rpx;
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
+}
+
+.question-input-group {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.question-input {
+  flex: 1;
+  padding: 24rpx 32rpx;
+  border: 2rpx solid #E5E7EB;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  background: #F9FAFB;
+  transition: all 0.3s ease;
+}
+
+.question-input:focus {
+  border-color: #6B46C1;
+  background: white;
+  outline: none;
+}
+
+.question-btn {
+  padding: 24rpx 48rpx;
+  background: linear-gradient(135deg, #6B46C1, #9333EA);
+  color: white;
+  border: none;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.question-btn:active {
+  transform: translateY(2rpx);
+  box-shadow: 0 4rpx 12rpx rgba(107, 70, 193, 0.3);
+}
+
+/* 响应式设计 */
+@media (max-width: 375px) {
+  .feature-card {
+    padding: 24rpx;
+  }
+  
+  .card-icon {
+    width: 64rpx;
+    height: 64rpx;
+    margin-right: 24rpx;
+  }
+  
+  .card-title {
+    font-size: 28rpx;
+  }
+  
+  .card-desc {
+    font-size: 24rpx;
+  }
+  
+  .question-input-group {
+    flex-direction: column;
+  }
+  
+  .question-btn {
+    width: 100%;
+  }
+}

@@ -1,0 +1,373 @@
+/* 3D动画和粒子特效样式 */
+
+/* 3D卡片容器 */
+.card-3d-container {
+  perspective: 1000rpx;
+  transform-style: preserve-3d;
+}
+
+/* 3D卡片基础样式 */
+.card-3d {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 卡片翻转效果 */
+.card-3d.flipping {
+  transform: rotateY(90deg) scale(1.1);
+}
+
+.card-3d.flipped {
+  transform: rotateY(180deg);
+}
+
+/* 卡片悬浮效果 */
+.card-3d.hover {
+  transform: translateY(-10rpx) rotateY(15deg) scale(1.05);
+  box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.3);
+}
+
+/* 卡片点击波纹效果 */
+.ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(156, 39, 176, 0.6) 0%, transparent 70%);
+  transform: scale(0);
+  animation: ripple 0.6s linear;
+  pointer-events: none;
+}
+
+@keyframes ripple {
+  to {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+/* 粒子画布 */
+.particle-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* 魔法粒子效果 */
+.magic-particle {
+  position: absolute;
+  width: 4rpx;
+  height: 4rpx;
+  border-radius: 50%;
+  background: #d1c4e9;
+  box-shadow: 0 0 10rpx #d1c4e9;
+  animation: magicFloat 3s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes magicFloat {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-200rpx) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* 星尘效果 */
+.stardust-particle {
+  position: absolute;
+  width: 2rpx;
+  height: 2rpx;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 6rpx #ffffff;
+  animation: stardustTwinkle 2s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes stardustTwinkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+/* 能量波纹效果 */
+.energy-ripple {
+  position: absolute;
+  border: 2rpx solid #9c27b0;
+  border-radius: 50%;
+  opacity: 0;
+  animation: energyRipple 1s ease-out;
+  pointer-events: none;
+}
+
+@keyframes energyRipple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 1;
+  }
+  100% {
+    width: 200rpx;
+    height: 200rpx;
+    opacity: 0;
+  }
+}
+
+/* 3D洗牌动画 */
+.shuffle-3d {
+  animation: shuffle3d 2s ease-in-out;
+}
+
+@keyframes shuffle3d {
+  0% {
+    transform: rotateX(0deg) rotateY(0deg) scale(1);
+  }
+  25% {
+    transform: rotateX(180deg) rotateY(90deg) scale(1.2);
+  }
+  50% {
+    transform: rotateX(360deg) rotateY(180deg) scale(0.8);
+  }
+  75% {
+    transform: rotateX(180deg) rotateY(270deg) scale(1.1);
+  }
+  100% {
+    transform: rotateX(0deg) rotateY(360deg) scale(1);
+  }
+}
+
+/* 卡片入场动画 */
+.card-enter {
+  animation: cardEnter 0.6s ease-out;
+}
+
+@keyframes cardEnter {
+  0% {
+    transform: translateY(100rpx) rotateX(90deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+/* 神秘光晕效果 */
+.mystical-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120rpx;
+  height: 120rpx;
+  background: radial-gradient(circle, rgba(209, 196, 233, 0.8) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: mysticalPulse 2s infinite ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes mysticalPulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* 手势识别反馈 */
+.gesture-feedback {
+  position: absolute;
+  background: rgba(156, 39, 176, 0.3);
+  border-radius: 50%;
+  animation: gestureFeedback 0.5s ease-out;
+  pointer-events: none;
+}
+
+@keyframes gestureFeedback {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* 触摸轨迹效果 */
+.touch-trail {
+  position: absolute;
+  width: 4rpx;
+  height: 4rpx;
+  background: rgba(209, 196, 233, 0.8);
+  border-radius: 50%;
+  animation: touchTrailFade 1s ease-out;
+  pointer-events: none;
+}
+
+@keyframes touchTrailFade {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+
+/* 庆祝动画 */
+.celebration-burst {
+  position: absolute;
+  pointer-events: none;
+}
+
+.celebration-particle {
+  position: absolute;
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 50%;
+  animation: celebrationFly 2s ease-out forwards;
+}
+
+@keyframes celebrationFly {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--end-x), var(--end-y)) scale(0);
+    opacity: 0;
+  }
+}
+
+/* 3D星空背景 */
+.starry-background-3d {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  perspective: 1000rpx;
+}
+
+.star-3d {
+  position: absolute;
+  width: 2rpx;
+  height: 2rpx;
+  background: #ffffff;
+  border-radius: 50%;
+  animation: star3dFloat 10s infinite linear;
+  transform-style: preserve-3d;
+}
+
+@keyframes star3dFloat {
+  0% {
+    transform: translateZ(-1000rpx) rotateY(0deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateZ(1000rpx) rotateY(360deg);
+    opacity: 0;
+  }
+}
+
+/* 全息投影效果 */
+.hologram-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.hologram-effect::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(156, 39, 176, 0.3) 50%,
+    transparent 70%
+  );
+  animation: hologramScan 2s infinite linear;
+  pointer-events: none;
+}
+
+@keyframes hologramScan {
+  0% {
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+  }
+}
+
+/* 响应式调整 */
+@media (max-width: 375px) {
+  .magic-particle {
+    width: 3rpx;
+    height: 3rpx;
+  }
+  
+  .stardust-particle {
+    width: 1.5rpx;
+    height: 1.5rpx;
+  }
+  
+  .energy-ripple {
+    border-width: 1rpx;
+  }
+}
+
+/* 性能优化 */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+/* 动画性能优化 */
+.smooth-animation {
+  animation: smoothAnimation 0.3s ease-out;
+}
+
+@keyframes smoothAnimation {
+  0% {
+    transform: translateZ(0) scale(1);
+  }
+  100% {
+    transform: translateZ(0) scale(1);
+  }
+}

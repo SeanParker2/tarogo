@@ -1,0 +1,143 @@
+<view class="draw-container">
+  <!-- 背景动画 -->
+  <view class="background-animation">
+    <view class="star star-1"></view>
+    <view class="star star-2"></view>
+    <view class="star star-3"></view>
+    <view class="star star-4"></view>
+    <view class="star star-5"></view>
+  </view>
+
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <text class="page-title">{{spreadType === 'single' ? '单张牌占卜' : spreadType === 'three' ? '三张牌占卜' : spreadType === 'celtic' ? '凯尔特十字占卜' : '选择你的塔罗牌'}}</text>
+    <text class="page-subtitle">{{currentStepText}}</text>
+  </view>
+
+  <!-- 步骤指示器 -->
+  <view class="step-indicator">
+    <view class="step-item {{currentStep >= 1 ? 'active' : ''}}">
+      <view class="step-number">1</view>
+      <text class="step-text">洗牌</text>
+    </view>
+    <view class="step-line {{currentStep >= 2 ? 'active' : ''}}"></view>
+    <view class="step-item {{currentStep >= 2 ? 'active' : ''}}">
+      <view class="step-number">2</view>
+      <text class="step-text">选牌</text>
+    </view>
+    <view class="step-line {{currentStep >= 3 ? 'active' : ''}}"></view>
+    <view class="step-item {{currentStep >= 3 ? 'active' : ''}}">
+      <view class="step-number">3</view>
+      <text class="step-text">翻牌</text>
+    </view>
+  </view>
+
+  <!-- 洗牌动画区域 -->
+  <view class="shuffle-area" wx:if="{{currentStep === 1}}">
+    <view class="deck-container">
+      <view class="card-deck" animation="{{shuffleAnimation}}">
+        <view class="card card-back" wx:for="{{78}}" wx:key="index" style="transform: translate({{index * 0.5}}rpx, {{index * 0.3}}rpx) rotate({{index * 0.2}}deg);"></view>
+      </view>
+    </view>
+    <button class="action-btn shuffle-btn" bindtap="startShuffling">
+      <text class="btn-text">{{isShuffling ? '洗牌中...' : '开始洗牌'}}</text>
+    </button>
+  </view>
+
+  <!-- 选牌区域 -->
+  <view class="selection-area" wx:if="{{currentStep === 2}}">
+    <view class="instruction-text">
+      <text>请选择 {{cardsToSelect}} 张牌</text>
+      <text class="selected-count">已选择: {{selectedCards.length}}/{{cardsToSelect}}</text>
+    </view>
+    
+    <view class="cards-grid">
+      <view class="card-item {{card.selected ? 'selected' : ''}} {{card.flipped ? 'flipped' : ''}}"
+            wx:for="{{displayCards}}" wx:key="id"
+            bindtap="selectCard"
+            data-card="{{item}}"
+            data-index="{{index}}"
+            animation="{{card.animation}}">
+        
+        <!-- 卡牌背面 -->
+        <view class="card-face card-back-face">
+          <view class="card-back-pattern"></view>
+        </view>
+        
+        <!-- 卡牌正面 -->
+        <view class="card-face card-front-face">
+          <image class="card-image" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="card-info">
+            <text class="card-name">{{item.name}}</text>
+            <text class="card-type">{{item.suit}}</text>
+          </view>
+        </view>
+        
+        <!-- 选中标记 -->
+        <view class="selection-mark" wx:if="{{card.selected}}">
+          <text class="selection-number">{{card.selectionNumber}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <button class="action-btn confirm-btn" bindtap="confirmSelection" 
+            disabled="{{selectedCards.length !== cardsToSelect}}"
+            style="opacity: {{selectedCards.length === cardsToSelect ? 1 : 0.6}}">
+      <text class="btn-text">确认选择</text>
+    </button>
+  </view>
+
+  <!-- 翻牌区域 -->
+  <view class="reveal-area" wx:if="{{currentStep === 3}}">
+    <view class="reveal-cards">
+      <view class="reveal-card-item {{card.revealed ? 'revealed' : ''}}"
+            wx:for="{{finalCards}}" wx:key="id"
+            style="animation-delay: {{index * 0.3}}s"
+            bindtap="revealCard"
+            data-card="{{item}}"
+            data-index="{{index}}">
+        
+        <!-- 卡牌背面 -->
+        <view class="reveal-card-face reveal-card-back">
+          <view class="mystical-glow"></view>
+        </view>
+        
+        <!-- 卡牌正面 -->
+        <view class="reveal-card-face reveal-card-front">
+          <image class="reveal-card-image" src="{{item.image}}" mode="aspectFill"></image>
+          <view class="reveal-card-info">
+            <text class="reveal-card-name">{{item.name}}</text>
+            <text class="reveal-card-position">{{item.position === 'upright' ? '正位' : '逆位'}}</text>
+            <text class="reveal-card-meaning">{{item.position === 'upright' ? item.meaning_up : item.meaning_rev}}</text>
+          </view>
+        </view>
+        
+        <!-- 位置指示器 -->
+        <view class="position-indicator {{item.position}}" wx:if="{{item.revealed}}">
+          <text class="position-text">{{item.position === 'upright' ? '↑' : '↓'}}</text>
+        </view>
+      </view>
+    </view>
+    
+    <view class="reveal-progress">
+      <text class="progress-text">已翻开: {{revealedCount}}/{{finalCards.length}}</text>
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{(revealedCount/finalCards.length)*100}}%"></view>
+      </view>
+    </view>
+    
+    <button class="action-btn complete-btn" bindtap="completeDivination" 
+            wx:if="{{revealedCount === finalCards.length}}"
+            animation="{{completeBtnAnimation}}">
+      <text class="btn-text">查看解读结果</text>
+    </button>
+  </view>
+
+  <!-- 魔法特效 -->
+  <view class="magic-effects" wx:if="{{showMagicEffects}}">
+    <view class="magic-circle"></view>
+    <view class="magic-particles">
+      <view class="particle" wx:for="{{12}}" wx:key="index" style="animation-delay: {{index * 0.1}}s"></view>
+    </view>
+  </view>
+</view>

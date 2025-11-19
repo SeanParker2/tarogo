@@ -1,0 +1,134 @@
+<!-- 首页 - 塔罗牌占卜入口 -->
+<view class="container">
+  <!-- 头部横幅 -->
+  <view class="header-banner">
+    <view class="banner-content">
+      <text class="banner-title">AI塔罗占卜</text>
+      <text class="banner-subtitle">探索内心的智慧，预见未来的可能</text>
+    </view>
+    <view class="banner-decoration">
+      <view class="star star-1"></view>
+      <view class="star star-2"></view>
+      <view class="star star-3"></view>
+    </view>
+  </view>
+
+  <!-- 功能卡片 -->
+  <view class="feature-cards">
+    <!-- 单张牌占卜 -->
+    <view class="feature-card" bindtap="startSingleDivination" data-type="single">
+      <view class="card-icon">
+        <text class="icon">🔮</text>
+      </view>
+      <view class="card-content">
+        <text class="card-title">单张牌占卜</text>
+        <text class="card-desc">快速获得今日指引</text>
+      </view>
+      <view class="card-arrow">
+        <text class="arrow">→</text>
+      </view>
+    </view>
+
+    <!-- 三张牌占卜 -->
+    <view class="feature-card" bindtap="startThreeDivination" data-type="three">
+      <view class="card-icon">
+        <text class="icon">✨</text>
+      </view>
+      <view class="card-content">
+        <text class="card-title">三张牌占卜</text>
+        <text class="card-desc">过去、现在、未来</text>
+      </view>
+      <view class="card-arrow">
+        <text class="arrow">→</text>
+      </view>
+    </view>
+
+    <!-- 凯尔特十字 -->
+    <view class="feature-card" bindtap="startCelticDivination" data-type="celtic">
+      <view class="card-icon">
+        <text class="icon">🌟</text>
+      </view>
+      <view class="card-content">
+        <text class="card-title">凯尔特十字</text>
+        <text class="card-desc">深度全面分析</text>
+      </view>
+      <view class="card-arrow">
+        <text class="arrow">→</text>
+      </view>
+    </view>
+
+    <!-- 爱情占卜 -->
+    <view class="feature-card" bindtap="startLoveDivination" data-type="love">
+      <view class="card-icon">
+        <text class="icon">💕</text>
+      </view>
+      <view class="card-content">
+        <text class="card-title">爱情占卜</text>
+        <text class="card-desc">感情关系指引</text>
+      </view>
+      <view class="card-arrow">
+        <text class="arrow">→</text>
+      </view>
+    </view>
+
+    <!-- 事业占卜 -->
+    <view class="feature-card" bindtap="startCareerDivination" data-type="career">
+      <view class="card-icon">
+        <text class="icon">💼</text>
+      </view>
+      <view class="card-content">
+        <text class="card-title">事业占卜</text>
+        <text class="card-desc">职业发展建议</text>
+      </view>
+      <view class="card-arrow">
+        <text class="arrow">→</text>
+      </view>
+    </view>
+
+    <!-- 运势占卜 -->
+    <view class="feature-card" bindtap="startFortuneDivination" data-type="fortune">
+      <view class="card-icon">
+        <text class="icon">🍀</text>
+      </view>
+      <view class="card-content">
+        <text class="card-title">运势占卜</text>
+        <text class="card-desc">整体运势分析</text>
+      </view>
+      <view class="card-arrow">
+        <text class="arrow">→</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 今日塔罗 -->
+  <view class="daily-tarot" wx:if="{{dailyCard}}">
+    <view class="section-header">
+      <text class="section-title">今日塔罗</text>
+      <text class="section-more" bindtap="viewDailyDetail">查看详情</text>
+    </view>
+    <view class="daily-card">
+      <image class="card-image" src="{{dailyCard.imageUrl}}" mode="aspectFit"></image>
+      <view class="card-info">
+        <text class="card-name">{{dailyCard.name}}</text>
+        <text class="card-meaning">{{dailyCard.uprightMeaning}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 快速提问 -->
+  <view class="quick-question">
+    <view class="section-header">
+      <text class="section-title">快速提问</text>
+    </view>
+    <view class="question-input-group">
+      <input 
+        class="question-input" 
+        placeholder="输入你的问题..."
+        value="{{quickQuestion}}"
+        bindinput="onQuestionInput"
+        bindconfirm="startQuickDivination"
+      />
+      <button class="question-btn" bindtap="startQuickDivination">提问</button>
+    </view>
+  </view>
+</view>
