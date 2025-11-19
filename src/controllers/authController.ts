@@ -1,4 +1,8 @@
 import { Router } from 'express';
+import axios from 'axios';
+import jwt, { Secret } from 'jsonwebtoken';
+import config from '../config';
+import { getByOpenId, createUser } from '../models/UserModel';
 
 const router = Router();
 
@@ -9,39 +13,28 @@ const router = Router();
  */
 router.post('/login', async (req: any, res: any) => {
   try {
-    // 微信小程序登录逻辑
-    const { code, userInfo } = req.body;
-    
+    const { code, userInfo } = req.body
     if (!code) {
-      return res.status(400).json({
-        status: 'error',
-        message: '缺少微信登录code'
-      });
+      return res.status(400).json({ status: 'error', message: '缺少微信登录code' })
     }
-
-    // 这里应该调用微信API获取openid
-    // 暂时返回模拟数据
-    const mockOpenId = 'mock_openid_' + Date.now();
-    const mockToken = 'mock_jwt_token_' + Date.now();
-
-    res.json({
-      status: 'success',
-      data: {
-        token: mockToken,
-        userId: mockOpenId,
-        isVip: false,
-        userInfo: {
-          nickname: userInfo?.nickName || '神秘用户',
-          avatarUrl: userInfo?.avatarUrl || '/images/default-avatar.png'
-        }
-      }
-    });
+    if (!config.wechat?.appId || !config.wechat?.appSecret) {
+      return res.status(500).json({ status: 'error', message: '微信AppId或AppSecret未配置' })
+    }
+    const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${config.wechat.appId}&secret=${config.wechat.appSecret}&js_code=${code}&grant_type=authorization_code`
+    const resp = await axios.get(url)
+    const data = resp.data || {}
+    if (!data.openid) {
+      const msg = typeof data.errmsg === 'string' ? data.errmsg : '微信接口错误'
+      return res.status(400).json({ status: 'error', message: msg })
+    }
+    let user = await getByOpenId(data.openid)
+    if (!user) {
+      user = await createUser({ openid: data.openid, nickname: userInfo?.nickName, avatarUrl: userInfo?.avatarUrl })
+    }
+    const token = jwt.sign({ id: user.id, openid: user.openid }, config.jwt.secret as Secret, { expiresIn: config.jwt.expiresIn as any })
+    res.json({ status: 'success', data: { token, userId: user.id, isVip: !!user.isVip, userInfo: { nickname: user.nickname || '神秘用户', avatarUrl: user.avatarUrl || '/images/default-avatar.png' } } })
   } catch (error) {
-    console.error('登录错误:', error);
-    res.status(500).json({
-      status: 'error',
-      message: '登录失败，请稍后重试'
-    });
+    res.status(500).json({ status: 'error', message: '登录失败，请稍后重试' })
   }
 });
 

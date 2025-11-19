@@ -79,7 +79,7 @@ router.get('/list', async (req: any, res: any) => {
       filteredCards = filteredCards.filter(card => card.type === type);
     }
     if (suit) {
-      filteredCards = filteredCards.filter(card => card.suit === suit);
+      filteredCards = filteredCards.filter(card => (card as any).suit === suit);
     }
 
     // 分页

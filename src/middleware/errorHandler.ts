@@ -43,14 +43,15 @@ export const errorHandler = (
   }
 
   // 重复字段错误
-  if (error.code === 11000) {
+  if ((error as any).code === 11000) {
     const message = '字段值已存在';
     error = new AppError(message, 400);
   }
 
   // 验证错误
   if (error.name === 'ValidationError') {
-    const message = Object.values(error.errors).map((val: any) => val.message).join(', ');
+    const errors = (error as any).errors || {}
+    const message = Object.values(errors).map((val: any) => val.message).join(', ');
     error = new AppError(message, 400);
   }
 
@@ -67,8 +68,9 @@ export const errorHandler = (
   }
 
   // 开发环境返回详细错误信息
+  const statusCode = error.statusCode || 500
   if (config.nodeEnv === 'development') {
-    res.status(error.statusCode).json({
+    res.status(statusCode).json({
       status: error.status,
       error,
       message: error.message,
@@ -77,7 +79,7 @@ export const errorHandler = (
   } else {
     // 生产环境
     if (error.isOperational) {
-      res.status(error.statusCode).json({
+      res.status(statusCode).json({
         status: error.status,
         message: error.message
       });

@@ -3,7 +3,7 @@
     "pages/index/index",
     "pages/question/question",
     "pages/card-selection/card-selection",
-    "pages/drawing/drawing",
+    "pages/draw/draw-enhanced",
     "pages/result/result",
     "pages/history/history",
     "pages/profile/profile",

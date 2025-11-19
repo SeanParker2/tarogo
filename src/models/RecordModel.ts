@@ -1,8 +1,8 @@
 import { query, transaction } from '../utils/database'
 
-export const createRecord = async (params: { userId: number, typeId: number, question: string, ai?: { interpretation?: string, advice?: string, confidence?: number } }) => {
-  const sql = `INSERT INTO divination_records (user_id, type_id, question, status, ai_interpretation, ai_advice, ai_confidence) VALUES (?, ?, ?, 'completed', ?, ?, ?)`
-  const values = [params.userId, params.typeId, params.question, params.ai?.interpretation || null, params.ai?.advice || null, params.ai?.confidence || null]
+export const createRecord = async (params: { userId: number, typeId: number, question: string, ai?: { interpretation?: string, advice?: string, confidence?: number }, status?: string }) => {
+  const sql = `INSERT INTO divination_records (user_id, type_id, question, status, ai_interpretation, ai_advice, ai_confidence) VALUES (?, ?, ?, ?, ?, ?, ?)`
+  const values = [params.userId, params.typeId, params.question, params.status || 'completed', params.ai?.interpretation || null, params.ai?.advice || null, params.ai?.confidence || null]
   const res: any = await query(sql, values)
   return res.insertId
 }

@@ -9,9 +9,6 @@ const pool = mysql.createPool({
   password: config.database.password,
   database: config.database.name,
   connectionLimit: config.database.connectionLimit,
-  acquireTimeout: config.database.acquireTimeout,
-  timeout: config.database.timeout,
-  reconnect: config.database.reconnect,
   charset: 'utf8mb4'
 });
 

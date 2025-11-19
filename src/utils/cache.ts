@@ -2,12 +2,10 @@ import { createClient } from 'redis';
 import { config } from '../config';
 
 // 创建Redis客户端
-const redisClient = createClient({
-  host: config.redis.host,
-  port: config.redis.port,
-  password: config.redis.password || undefined,
-  db: config.redis.db
-});
+const url = config.redis.password 
+  ? `redis://:${config.redis.password}@${config.redis.host}:${config.redis.port}/${config.redis.db}`
+  : `redis://${config.redis.host}:${config.redis.port}/${config.redis.db}`
+const redisClient = createClient({ url });
 
 // 连接事件处理
 redisClient.on('connect', () => {

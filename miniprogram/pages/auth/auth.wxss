@@ -1,0 +1,5 @@
+.page { min-height: 100vh; background: #1f1147; display:flex; align-items:center; justify-content:center }
+.container { text-align:center; color:#e9d5ff }
+.avatar { width:160rpx; height:160rpx; border-radius:50%; margin-bottom:30rpx }
+.title { font-size:32rpx; margin-bottom:20rpx }
+.btn { width:70%; background:#8b5cf6; color:#fff }

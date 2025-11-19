@@ -1,0 +1,9 @@
+.page { min-height: 100vh; background: #0f0a2f; }
+.container { padding: 24rpx; color:#e9d5ff }
+.item { display:flex; align-items:flex-start; margin: 24rpx 0; }
+.dot { width: 16rpx; height: 16rpx; border-radius: 50%; background: #f5d0fe; margin-right: 20rpx; margin-top: 8rpx }
+.content { flex:1; }
+.date { font-size: 24rpx; color:#a78bfa }
+.question { display:block; font-size: 30rpx; margin-top: 8rpx; color:#fff }
+.type { display:block; font-size: 24rpx; margin-top: 6rpx; color:#c4b5fd }
+.empty { text-align:center; margin-top: 100rpx; color:#c4b5fd }

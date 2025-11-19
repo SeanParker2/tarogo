@@ -8,7 +8,7 @@ const router = Router();
  * @desc    AI解读塔罗牌
  * @access  Private
  */
-router.post('/interpret', async (req, res) => {
+router.post('/interpret', async (req: any, res: any): Promise<void> => {
   try {
     const { cards, question, type, userInfo } = req.body;
 
@@ -40,10 +40,10 @@ router.post('/interpret', async (req, res) => {
       userInfo
     });
 
-    res.json({ status: 'success', data: interpretation });
+    return res.json({ status: 'success', data: interpretation });
   } catch (error) {
     console.error('AI解读错误:', error);
-    res.status(500).json({ status: 'error', message: 'AI解读服务暂时不可用，请稍后重试' });
+    return res.status(500).json({ status: 'error', message: 'AI解读服务暂时不可用，请稍后重试' });
   }
 });
 

@@ -3,6 +3,9 @@ import { cacheService } from '../services/cacheService';
 import { logger } from '../utils/logger';
 import { AppError } from '../utils/AppError';
 import crypto from 'crypto';
+import { aiInterpretationService } from '../services/aiInterpretationService';
+import { getCardById } from '../models/CardModel';
+import { createRecord, addCardResults, getTypeIdByName } from '../models/RecordModel';
 
 interface DivinationRequest {
   question: string;
@@ -52,7 +55,7 @@ class DivinationController {
       this.validateDivinationRequest(divinationRequest);
 
       // 生成唯一ID
-      const divinationId = this.generateDivinationId(divinationRequest, userId);
+      const divinationId = this.generateDivinationId(divinationRequest, String(userId));
       
       // 检查是否已有缓存结果
       const cacheKey = `divination:${divinationId}`;
@@ -68,21 +71,28 @@ class DivinationController {
         return;
       }
 
-      // 模拟AI解读（实际应该调用AI服务）
-      const interpretation = await this.generateAIInterpretation(divinationRequest);
+      let interpretation: any = null
+      try {
+        const enriched = await Promise.all(divinationRequest.cards.map(async (c) => {
+          const info: any = await getCardById(c.id)
+          return { name: info?.name || `卡牌${c.id}` , englishName: info?.englishName || '', position: String(c.position), isReversed: !!c.isReversed }
+        }))
+        const payload = { cards: enriched, question: divinationRequest.question, type: divinationRequest.spreadType, userInfo: { nickname: '微信用户' } }
+        interpretation = await aiInterpretationService.generateInterpretation(payload)
+      } catch (e) {}
       
       const result: DivinationResult = {
         id: divinationId,
         question: divinationRequest.question,
         spreadType: divinationRequest.spreadType,
-        cards: interpretation.cards,
-        overallInterpretation: interpretation.overallInterpretation,
-        advice: interpretation.advice,
-        confidence: interpretation.confidence,
-        category: interpretation.category,
+        cards: (interpretation?.cards || []).map((x: any) => ({ id: x.id, name: x.name || '', position: x.position || 0, isReversed: !!x.isReversed, interpretation: x.interpretation || '' })),
+        overallInterpretation: interpretation?.overallInterpretation || '',
+        advice: interpretation?.advice || '',
+        confidence: interpretation?.confidence || 0,
+        category: interpretation?.category || '',
         createdAt: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24小时后过期
-      };
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      }
 
       // 缓存结果（24小时）
       await cacheService.set(cacheKey, result, { 
@@ -90,11 +100,16 @@ class DivinationController {
         ttl: 86400 
       });
 
+      const typeId = await getTypeIdByName(divinationRequest.spreadType)
+      const status = interpretation ? 'completed' : 'pending'
+      const recordId = await createRecord({ userId: Number(userId) || 0, typeId, question: divinationRequest.question, ai: interpretation ? { interpretation: result.overallInterpretation, advice: result.advice, confidence: result.confidence } : undefined, status })
+      await addCardResults(recordId, divinationRequest.cards.map(c => ({ card_id: c.id, position: c.position, is_reversed: !!c.isReversed })))
+      
       // 缓存用户历史记录索引
       if (userId) {
         const userHistoryKey = `user:${userId}:divinations`;
         const userHistory = await cacheService.get<string[]>(userHistoryKey, { prefix: 'tarot:' }) || [];
-        userHistory.unshift(divinationId);
+        userHistory.unshift(String(recordId));
         
         // 只保留最近50次占卜记录
         if (userHistory.length > 50) {
@@ -107,11 +122,11 @@ class DivinationController {
         });
       }
 
-      logger.info(`New divination created: ${divinationId}`);
+      logger.info(`New divination created: ${recordId}`);
       
       res.json({
         success: true,
-        data: result,
+        data: { ...result, id: String(recordId) },
         cached: false
       });
     } catch (error) {
@@ -148,7 +163,7 @@ class DivinationController {
       
       if (cachedResult) {
         // 检查用户权限（简单实现）
-        if (userId && !this.hasPermissionToView(cachedResult, userId)) {
+        if (userId && !this.hasPermissionToView(cachedResult, String(userId))) {
           throw new AppError('Access denied', 403);
         }
         

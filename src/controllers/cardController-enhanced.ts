@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { cacheService } from '../services/cacheService';
 import { logger } from '../utils/logger';
 import { AppError } from '../utils/AppError';
+import { getCards, getCardById } from '../models/CardModel';
+import { query } from '../utils/database';
 
 interface Card {
   id: number;
@@ -284,93 +286,32 @@ class CardController {
     }
   }
 
-  // 模拟数据库方法（实际应该连接真实数据库）
-  private async getCardsFromDatabase(query: CardQuery): Promise<Card[]> {
-    // 这里应该连接真实数据库查询
-    // 现在返回模拟数据
-    const mockCards: Card[] = [];
-    
-    for (let i = 1; i <= 78; i++) {
-      const suits = ['major', 'cups', 'wands', 'swords', 'pentacles'];
-      const elements = ['spirit', 'water', 'fire', 'air', 'earth'];
-      const planets = ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Pluto'];
-      const zodiacs = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
-      
-      const suit = i === 0 ? 'major' : suits[Math.floor((i - 1) / 14) + 1] || 'major';
-      const number = i === 0 ? 0 : (i - 1) % 14 + 1;
-      
-      const card: Card = {
-        id: i,
-        name: `塔罗牌 ${i}`,
-        nameEn: `Tarot Card ${i}`,
-        suit: suit,
-        number: number,
-        keywords: ['关键词1', '关键词2', '关键词3'],
-        description: `这是第${i}张塔罗牌的描述`,
-        uprightMeaning: `正位含义：积极的能量和正面的影响`,
-        reversedMeaning: `逆位含义：需要注意的挑战和阻碍`,
-        imageUrl: `/images/cards/card_${i}.jpg`,
-        element: elements[suits.indexOf(suit)] || 'spirit',
-        planet: planets[i % planets.length],
-        zodiac: zodiacs[i % zodiacs.length]
-      };
-      
-      // 应用查询过滤
-      if (query.suit && card.suit !== query.suit) continue;
-      if (query.element && card.element !== query.element) continue;
-      if (query.planet && card.planet !== query.planet) continue;
-      if (query.zodiac && card.zodiac !== query.zodiac) continue;
-      
-      mockCards.push(card);
-    }
-    
-    // 应用分页
-    const start = query.offset || 0;
-    const end = start + (query.limit || 78);
-    
-    return mockCards.slice(start, end);
+  private async getCardsFromDatabase(q: CardQuery): Promise<Card[]> {
+    const page = Math.floor((q.offset || 0) / (q.limit || 78)) + 1
+    const limit = q.limit || 78
+    const rows: any = await getCards({ type: q.suit === 'major' ? 'major' : undefined, suit: q.suit && q.suit !== 'major' ? q.suit : undefined, page, limit })
+    return rows.map((r: any) => ({ id: r.id, name: r.name, nameEn: r.englishName, suit: r.type === 'major' ? 'major' : r.suit, number: r.number || 0, keywords: (r.uprightKeywords || '')?.split(',').filter(Boolean), description: r.description || '', uprightMeaning: r.uprightMeaning || '', reversedMeaning: r.reversedMeaning || '', imageUrl: r.imageUrl || r.thumbnailUrl || '', element: r.element || '', planet: r.planet || '', zodiac: r.zodiacSign || '' }))
   }
 
   private async getCardFromDatabase(cardId: number): Promise<Card | null> {
-    const cards = await this.getCardsFromDatabase({ limit: 78, offset: 0 });
-    return cards.find(card => card.id === cardId) || null;
+    const r: any = await getCardById(cardId)
+    if (!r) return null
+    return { id: r.id, name: r.name, nameEn: r.englishName, suit: r.type === 'major' ? 'major' : r.suit, number: r.number || 0, keywords: (r.uprightKeywords || '')?.split(',').filter(Boolean), description: r.description || '', uprightMeaning: r.uprightMeaning || '', reversedMeaning: r.reversedMeaning || '', imageUrl: r.imageUrl || r.thumbnailUrl || '', element: r.element || '', planet: r.planet || '', zodiac: r.zodiacSign || '' }
   }
 
   private async getRandomCardsFromDatabase(count: number, allowRepeats: boolean): Promise<Card[]> {
-    const allCards = await this.getCardsFromDatabase({ limit: 78, offset: 0 });
-    
-    if (allowRepeats) {
-      const randomCards: Card[] = [];
-      for (let i = 0; i < count; i++) {
-        const randomIndex = Math.floor(Math.random() * allCards.length);
-        randomCards.push(allCards[randomIndex]);
-      }
-      return randomCards;
-    } else {
-      const shuffled = [...allCards].sort(() => Math.random() - 0.5);
-      return shuffled.slice(0, count);
-    }
+    const rows: any = await query('SELECT id, name, english_name AS englishName, card_type AS type, suit, number, image_url AS imageUrl, thumbnail_url AS thumbnailUrl FROM tarot_cards ORDER BY RAND() LIMIT ?', [count])
+    const base = rows.map((r: any) => ({ id: r.id, name: r.name, nameEn: r.englishName, suit: r.type === 'major' ? 'major' : r.suit, number: r.number || 0, keywords: [], description: '', uprightMeaning: '', reversedMeaning: '', imageUrl: r.imageUrl || r.thumbnailUrl || '', element: '', planet: '', zodiac: '' }))
+    if (allowRepeats) return base
+    return base
   }
 
   private async getCardStatsFromDatabase(): Promise<any> {
-    const allCards = await this.getCardsFromDatabase({ limit: 78, offset: 0 });
-    
-    const stats = {
-      total: allCards.length,
-      bySuit: {} as Record<string, number>,
-      byElement: {} as Record<string, number>,
-      byPlanet: {} as Record<string, number>,
-      byZodiac: {} as Record<string, number>
-    };
-    
-    allCards.forEach(card => {
-      stats.bySuit[card.suit] = (stats.bySuit[card.suit] || 0) + 1;
-      stats.byElement[card.element] = (stats.byElement[card.element] || 0) + 1;
-      stats.byPlanet[card.planet] = (stats.byPlanet[card.planet] || 0) + 1;
-      stats.byZodiac[card.zodiac] = (stats.byZodiac[card.zodiac] || 0) + 1;
-    });
-    
-    return stats;
+    const totalRows: any = await query('SELECT COUNT(1) AS total FROM tarot_cards')
+    const suitRows: any = await query('SELECT COALESCE(card_type, suit) AS k, COUNT(1) AS c FROM tarot_cards GROUP BY k')
+    const stats: any = { total: totalRows[0]?.total || 0, bySuit: {}, byElement: {}, byPlanet: {}, byZodiac: {} }
+    suitRows.forEach((r: any) => { stats.bySuit[r.k] = r.c })
+    return stats
   }
 }
 

@@ -1,0 +1,11 @@
+<view class="page">
+  <view class="container">
+    <image class="avatar" src="{{userInfo?.avatarUrl || '/images/default-avatar.png'}}"></image>
+    <text class="name">{{userInfo?.nickname || '未登录'}}</text>
+    <button class="btn" wx:if="{{!token}}" bindtap="goLogin">点击登录</button>
+    <view class="stats">
+      <view class="stat"><text>累计占卜</text><text class="n">{{stats.total || 0}}</text></view>
+      <view class="stat"><text>VIP</text><text class="n">{{isVip ? '是' : '否'}}</text></view>
+    </view>
+  </view>
+</view>

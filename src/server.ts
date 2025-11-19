@@ -13,11 +13,14 @@ import cardRoutes from './controllers/cardController';
 import userRoutes from './controllers/userController';
 import paymentRoutes from './controllers/paymentController';
 import aiRoutes from './controllers/aiController';
+import seedCards from './utils/seeder';
+import { initializeDatabase } from './utils/database';
 
 // 中间件导入
 import { errorHandler } from './middleware/errorHandler';
 import { notFoundHandler } from './middleware/notFoundHandler';
 import { rateLimiter } from './middleware/rateLimiter';
+import { authMiddleware } from './middleware/rateLimiter';
 import { cacheMiddleware, cacheStatsMiddleware } from './middleware/cacheMiddleware';
 import { 
   performanceMiddleware, 
@@ -71,11 +74,12 @@ app.get('/api/performance/metrics', performanceMetricsMiddleware);
 app.post('/api/performance/reset', resetPerformanceMiddleware);
 
 // API路由
+initializeDatabase().then(() => seedCards()).catch(() => {})
 app.use('/api/auth', authRoutes);
-app.use('/api/divination', divinationRoutes);
+app.use('/api/divination', authMiddleware, divinationRoutes);
 app.use('/api/cards', cardRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/user', authMiddleware, userRoutes);
 app.use('/api/payment', paymentRoutes);
 
 // 错误处理中间件

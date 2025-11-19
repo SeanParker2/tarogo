@@ -12,13 +12,18 @@ Page({
   },
 
   onLoad(options) {
-    const cards = options.cards ? JSON.parse(decodeURIComponent(options.cards)) : []
-    const question = options.question ? decodeURIComponent(options.question) : ''
-    const spread = options.spread || 'single'
-    const spreadName = this.getSpreadName(spread)
-    this.setData({ cards, question, spread, spreadName })
-    this.startParticles()
-    this.fetchInterpretation()
+    const recordId = options.recordId
+    if (recordId) {
+      this.loadRecord(recordId)
+    } else {
+      const cards = options.cards ? JSON.parse(decodeURIComponent(options.cards)) : []
+      const question = options.question ? decodeURIComponent(options.question) : ''
+      const spread = options.spread || 'single'
+      const spreadName = this.getSpreadName(spread)
+      this.setData({ cards, question, spread, spreadName })
+      this.startParticles()
+      this.fetchInterpretation()
+    }
   },
 
   onShareAppMessage() {
@@ -45,6 +50,7 @@ Page({
       const nodes = this.toNodes(text)
       this.setData({ aiNodes: nodes, aiRaw: text, aiLoading: false })
       this.saveHistory(text)
+      this.saveServer(text)
     }).catch(() => { this.setData({ aiLoading: false }); app.showToast('解读失败，请稍后重试') })
   },
 
@@ -75,6 +81,24 @@ Page({
     const record = { id: `local_${Date.now()}`, question: this.data.question, type: this.data.spread, cards: this.data.cards, aiInterpretation: interpretation, createdAt: new Date().toISOString() }
     history.unshift(record)
     wx.setStorageSync('divinationHistory', history)
+  },
+
+  async saveServer(interpretation) {
+    if (!app.globalData.token) return
+    try {
+      const cardsPayload = this.data.cards.map((c, i) => ({ id: c.id, position: c.position || i + 1, isReversed: !!c.isReversed }))
+      await app.request({ url: '/divination/create', method: 'POST', data: { type: this.data.spread, question: this.data.question, cards: cardsPayload, ai: { interpretation } } })
+    } catch(e) {}
+  },
+
+  async loadRecord(id) {
+    try {
+      const res = await app.request({ url: `/divination/result/${id}`, method: 'GET' })
+      const d = res.data
+      const spreadName = this.getSpreadName(d.type)
+      const nodes = this.toNodes(d.aiInterpretation || '')
+      this.setData({ cards: d.cards || [], question: d.question || '', spread: d.type || '', spreadName, aiNodes: nodes, aiRaw: d.aiInterpretation || '', aiLoading: false })
+    } catch(e) { app.showToast('加载记录失败') }
   },
 
   goHome() {
