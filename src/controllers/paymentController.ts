@@ -120,6 +120,9 @@ router.get('/packages', async (req, res) => {
       packages: mockPackages
     }
   });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message });
+  }
 });
 
 /**
@@ -188,7 +191,7 @@ router.post('/notify', async (req: any, res: any) => {
     console.log(`支付失败：订单号 ${out_trade_no}`);
     res.send('<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[支付失败]]></return_msg></xml>');
   }
-}));
+});
 
 /**
  * @route   GET /api/payment/orders

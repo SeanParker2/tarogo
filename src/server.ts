@@ -12,6 +12,7 @@ import divinationRoutes from './controllers/divinationController';
 import cardRoutes from './controllers/cardController';
 import userRoutes from './controllers/userController';
 import paymentRoutes from './controllers/paymentController';
+import aiRoutes from './controllers/aiController';
 
 // 中间件导入
 import { errorHandler } from './middleware/errorHandler';
@@ -73,6 +74,7 @@ app.post('/api/performance/reset', resetPerformanceMiddleware);
 app.use('/api/auth', authRoutes);
 app.use('/api/divination', divinationRoutes);
 app.use('/api/cards', cardRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/payment', paymentRoutes);
 

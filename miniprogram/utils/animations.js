@@ -130,8 +130,7 @@ class ParticleSystem {
    */
   init(canvasId, pageInstance) {
     this.pageInstance = pageInstance;
-    this.query = wx.createSelectorQuery();
-    
+    this.query = wx.createSelectorQuery().in(pageInstance);
     this.query.select(`#${canvasId}`).fields({ node: true, size: true }).exec((res) => {
       if (res[0]) {
         this.canvas = res[0].node;

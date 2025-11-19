@@ -33,8 +33,6 @@ router.post('/interpret', async (req, res) => {
     });
   }
 
-  try {
-    // 调用AI解读服务
     const interpretation = await aiInterpretationService.generateInterpretation({
       cards,
       question: question.trim(),
@@ -42,18 +40,12 @@ router.post('/interpret', async (req, res) => {
       userInfo
     });
 
-    res.json({
-      status: 'success',
-      data: interpretation
-    });
+    res.json({ status: 'success', data: interpretation });
   } catch (error) {
     console.error('AI解读错误:', error);
-    res.status(500).json({
-      status: 'error',
-      message: 'AI解读服务暂时不可用，请稍后重试'
-    });
+    res.status(500).json({ status: 'error', message: 'AI解读服务暂时不可用，请稍后重试' });
   }
-}));
+});
 
 /**
  * @route   POST /api/ai/batch-interpret
@@ -95,7 +87,7 @@ router.post('/batch-interpret', async (req: any, res: any) => {
       message: '批量AI解读服务暂时不可用，请稍后重试'
     });
   }
-}));
+});
 
 /**
  * @route   GET /api/ai/models
@@ -137,7 +129,7 @@ router.get('/models', async (req: any, res: any) => {
       currentModel: 'gpt-3.5-turbo'
     }
   });
-}));
+});
 
 /**
  * @route   POST /api/ai/feedback
@@ -170,6 +162,6 @@ router.post('/feedback', async (req: any, res: any) => {
       message: '反馈提交成功，感谢您的宝贵意见！'
     }
   });
-}));
+});
 
 export default router;

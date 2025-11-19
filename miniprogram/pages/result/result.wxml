@@ -1,0 +1,35 @@
+<view class="page">
+  <view class="stars"></view>
+  <view class="container">
+    <view class="header">
+      <text class="spread">{{spreadName}}</text>
+      <text class="question">「{{question}}」</text>
+    </view>
+
+    <view class="cards" wx:if="{{cards.length > 0}}">
+      <block wx:for="{{cards}}" wx:key="index">
+        <view class="card" bindtap="onCardTap" data-index="{{index}}">
+          <image class="card-img" src="{{item.imageUrl || item.thumbnailUrl}}" mode="aspectFit"></image>
+          <view class="card-meta">
+            <text class="card-name">{{item.name}}</text>
+            <text class="card-pos">{{item.positionName || item.position || ''}}{{item.isReversed ? ' · 逆位' : ' · 正位'}}</text>
+          </view>
+        </view>
+      </block>
+    </view>
+
+    <view class="ai" wx:if="{{!aiLoading}}">
+      <rich-text nodes="{{aiNodes}}"></rich-text>
+    </view>
+
+    <view class="loading" wx:if="{{aiLoading}}">
+      <text class="loading-text">正在凝聚神秘能量…</text>
+      <canvas id="particle-canvas" canvas-id="particle-canvas" type="2d" class="particle"></canvas>
+    </view>
+
+    <view class="footer">
+      <button class="btn share" open-type="share">分享结果</button>
+      <button class="btn home" bindtap="goHome">返回首页</button>
+    </view>
+  </view>
+</view>

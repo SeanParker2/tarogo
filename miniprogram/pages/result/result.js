@@ -1,0 +1,83 @@
+const app = getApp()
+
+Page({
+  data: {
+    cards: [],
+    question: '',
+    spread: '',
+    spreadName: '',
+    aiLoading: true,
+    aiNodes: [],
+    aiRaw: ''
+  },
+
+  onLoad(options) {
+    const cards = options.cards ? JSON.parse(decodeURIComponent(options.cards)) : []
+    const question = options.question ? decodeURIComponent(options.question) : ''
+    const spread = options.spread || 'single'
+    const spreadName = this.getSpreadName(spread)
+    this.setData({ cards, question, spread, spreadName })
+    this.startParticles()
+    this.fetchInterpretation()
+  },
+
+  onShareAppMessage() {
+    return { title: '我的塔罗占卜结果', path: '/pages/result/result' }
+  },
+
+  getSpreadName(type) {
+    const map = { single: '单张解读', three: '三张牌阵', celtic: '凯尔特十字', relationship: '关系洞察', career: '事业方向' }
+    return map[type] || '占卜结果'
+  },
+
+  startParticles() {
+    try {
+      const animations = require('../../utils/animations.js')
+      animations.particleSystem.init('particle-canvas', this)
+      animations.particleSystem.createMagicParticles(60, {})
+    } catch(e) {}
+  },
+
+  fetchInterpretation() {
+    const cardsPayload = this.data.cards.map((c, i) => ({ id: c.id, name: c.name, isReversed: !!c.isReversed, position: c.position || i + 1, positionName: c.positionName || '', imageUrl: c.imageUrl || c.thumbnailUrl || '' }))
+    app.request({ url: '/ai/interpret', method: 'POST', data: { cards: cardsPayload, question: this.data.question, type: this.data.spread } }).then(res => {
+      const text = res.data?.interpretation || res.data?.aiInterpretation || ''
+      const nodes = this.toNodes(text)
+      this.setData({ aiNodes: nodes, aiRaw: text, aiLoading: false })
+      this.saveHistory(text)
+    }).catch(() => { this.setData({ aiLoading: false }); app.showToast('解读失败，请稍后重试') })
+  },
+
+  toNodes(md) {
+    const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    const lines = md.split(/\n+/).map(l => l.trim()).filter(Boolean)
+    const html = lines.map(l => {
+      let h = esc(l)
+      h = h.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      return `<p>${h}</p>`
+    }).join('')
+    return html
+  },
+
+  onCardTap(e) {
+    const idx = e.currentTarget.dataset.index
+    const card = this.data.cards[idx]
+    const title = `${card.name}${card.isReversed ? ' · 逆位' : ' · 正位'}`
+    const suit = card.suit || ''
+    const upright = card.meaning_up || card.upright_meaning || ''
+    const reversed = card.meaning_rev || card.reversed_meaning || ''
+    const content = `牌组：${suit}\n正位：${upright}\n逆位：${reversed}`
+    wx.showModal({ title, content, showCancel: false })
+  },
+
+  saveHistory(interpretation) {
+    const history = wx.getStorageSync('divinationHistory') || []
+    const record = { id: `local_${Date.now()}`, question: this.data.question, type: this.data.spread, cards: this.data.cards, aiInterpretation: interpretation, createdAt: new Date().toISOString() }
+    history.unshift(record)
+    wx.setStorageSync('divinationHistory', history)
+  },
+
+  goHome() {
+    wx.switchTab({ url: '/pages/index/index' })
+  }
+})

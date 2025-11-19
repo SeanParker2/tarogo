@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { createRecord, addCardResults, getTypeIdByName, getHistory, getResult } from '../models/RecordModel';
 
 const router = Router();
 
@@ -9,14 +10,18 @@ const router = Router();
  */
 router.post('/create', async (req: any, res: any) => {
   try {
-    const { type, question, cards } = req.body;
-    const userId = req.user?.id;
+    const { type, question, cards, ai } = req.body;
+    const userId = req.user?.id || req.body.userId;
 
     if (!type || !question || !cards || !Array.isArray(cards)) {
       return res.status(400).json({
         status: 'error',
         message: '缺少必要参数'
       });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ status: 'error', message: '未授权' });
     }
 
     // 验证占卜类型
@@ -37,26 +42,12 @@ router.post('/create', async (req: any, res: any) => {
       });
     }
 
-    // 创建占卜记录
-    const divinationId = 'div_' + Date.now();
-    const mockRecord = {
-      id: divinationId,
-      userId,
-      type,
-      question,
-      cards,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
+    const typeId = await getTypeIdByName(type);
+    const recordId = await createRecord({ userId, typeId, question, ai });
+    const results = cards.map((c: any, idx: number) => ({ card_id: c.id, position: c.position || idx + 1, position_name: c.positionName || '', is_reversed: !!c.isReversed, interpretation: c.interpretation || '', keywords: Array.isArray(c.keywords) ? c.keywords.join(',') : (c.keywords || ''), position_meaning: c.positionMeaning || '' }));
+    await addCardResults(recordId, results);
 
-    res.json({
-      status: 'success',
-      data: {
-        divinationId,
-        status: 'pending',
-        message: '占卜创建成功，正在生成AI解读...'
-      }
-    });
+    res.json({ status: 'success', data: { divinationId: recordId, status: 'completed', message: '占卜已保存' } });
   } catch (error) {
     console.error('创建占卜错误:', error);
     res.status(500).json({
@@ -74,7 +65,7 @@ router.post('/create', async (req: any, res: any) => {
 router.get('/result/:id', async (req: any, res: any) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
+    const userId = req.user?.id || req.query.userId;
 
     if (!id) {
       return res.status(400).json({
@@ -83,61 +74,11 @@ router.get('/result/:id', async (req: any, res: any) => {
       });
     }
 
-    // 模拟占卜结果
-    const mockResult = {
-      id,
-      question: '我的事业发展如何？',
-      type: 'three',
-      cards: [
-        {
-          id: 1,
-          name: '魔术师',
-          englishName: 'The Magician',
-          position: 'past',
-          isReversed: false,
-          imageUrl: '/images/cards/magician.jpg',
-          interpretation: '过去：你具备实现目标的所有技能和资源。'
-        },
-        {
-          id: 2,
-          name: '女祭司',
-          englishName: 'The High Priestess',
-          position: 'present',
-          isReversed: false,
-          imageUrl: '/images/cards/high-priestess.jpg',
-          interpretation: '现在：相信你的直觉，内在的智慧会指引你。'
-        },
-        {
-          id: 3,
-          name: '皇帝',
-          englishName: 'The Emperor',
-          position: 'future',
-          isReversed: false,
-          imageUrl: '/images/cards/emperor.jpg',
-          interpretation: '未来：你将建立稳定的事业基础，展现领导才能。'
-        }
-      ],
-      aiInterpretation: `根据您抽到的三张牌，我为您解读如下：
-
-**过去 - 魔术师正位**：
-您在过去已经积累了丰富的技能和经验，具备实现事业目标的所有要素。这张牌显示您有很强的执行力和创造力。
-
-**现在 - 女祭司正位**：
-当前阶段，您需要更多地倾听内心的声音。直觉会告诉您正确的方向。有时候，答案就在您的潜意识中。
-
-**未来 - 皇帝正位**：
-未来您将建立稳固的事业基础，可能会担任领导职位或创立自己的事业。这张牌预示着成功和权威。
-
-**综合建议**：
-相信自己的能力，同时保持内在的平衡。您的努力将会带来事业上的成功和稳定。`,
-      aiAdvice: '保持自信，继续学习新技能，相信直觉的同时也要理性分析。',
-      createdAt: new Date().toISOString()
-    };
-
-    res.json({
-      status: 'success',
-      data: mockResult
-    });
+    const result = await getResult(parseInt(id));
+    if (!result) {
+      return res.status(404).json({ status: 'error', message: '记录不存在' });
+    }
+    res.json({ status: 'success', data: result });
   } catch (error) {
     console.error('获取占卜结果错误:', error);
     res.status(500).json({
@@ -154,45 +95,15 @@ router.get('/result/:id', async (req: any, res: any) => {
  */
 router.get('/history', async (req: any, res: any) => {
   try {
-    const userId = req.user?.id;
-    const { page = 1, limit = 10 } = req.query;
-
+    const userId = req.user?.id || req.query.userId;
+    if (!userId) {
+      return res.status(401).json({ status: 'error', message: '未授权' });
+    }
+    const { page = 1, limit = 10 } = req.query as any;
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
-    const skip = (pageNum - 1) * limitNum;
-
-    // 模拟历史记录
-    const mockHistory = [
-      {
-        id: 'div_1234567890',
-        question: '我的感情发展如何？',
-        type: 'three',
-        status: 'completed',
-        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1天前
-        preview: '根据您抽到的牌面，感情发展呈现积极趋势...'
-      },
-      {
-        id: 'div_1234567891',
-        question: '事业选择建议',
-        type: 'single',
-        status: 'completed',
-        createdAt: new Date(Date.now() - 172800000).toISOString(), // 2天前
-        preview: '太阳正位显示这是一个充满希望的时期...'
-      }
-    ];
-
-    res.json({
-      status: 'success',
-      data: {
-        records: mockHistory,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total: 2,
-          pages: 1
-        }
-      }
-    });
+    const { records, total } = await getHistory(parseInt(userId as string), pageNum, limitNum);
+    res.json({ status: 'success', data: { records, pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) } } });
   } catch (error) {
     console.error('获取历史记录错误:', error);
     res.status(500).json({
@@ -210,7 +121,7 @@ router.get('/history', async (req: any, res: any) => {
 router.post('/rate', async (req: any, res: any) => {
   try {
     const { divinationId, rating, feedback } = req.body;
-    const userId = req.user?.id;
+    const userId = req.user?.id || req.body.userId;
 
     if (!divinationId || !rating) {
       return res.status(400).json({
@@ -226,12 +137,8 @@ router.post('/rate', async (req: any, res: any) => {
       });
     }
 
-    res.json({
-      status: 'success',
-      data: {
-        message: '评分提交成功，感谢您的反馈！'
-      }
-    });
+    await (await import('../utils/database')).query(`UPDATE divination_records SET user_rating = ?, user_feedback = ? WHERE id = ? AND user_id = ?`, [rating, feedback || null, divinationId, userId]);
+    res.json({ status: 'success', data: { message: '评分提交成功，感谢您的反馈！' } });
   } catch (error) {
     console.error('评分错误:', error);
     res.status(500).json({
