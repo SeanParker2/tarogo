@@ -7,5 +7,20 @@
       <view class="stat"><text>累计占卜</text><text class="n">{{stats.total || 0}}</text></view>
       <view class="stat"><text>VIP</text><text class="n">{{isVip ? '是' : '否'}}</text></view>
     </view>
+
+    <view wx:if="{{token}}" style="margin-top:30rpx">
+      <text>AI人设：</text>
+      <picker mode="selector" range="{{personas}}" value="{{personaIndex}}" bindchange="onPersonaChange">
+        <view class="btn">{{currentPersonaLabel}}</view>
+      </picker>
+    </view>
+
+    <view wx:if="{{token}}" style="margin-top:20rpx">
+      <button class="btn" bindtap="subscribeDaily">订阅每日运势</button>
+    </view>
+
+    <view wx:if="{{token}}" style="margin-top:20rpx">
+      <button class="btn" bindtap="openVip">开通VIP</button>
+    </view>
   </view>
 </view>

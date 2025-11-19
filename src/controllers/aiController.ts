@@ -3,6 +3,8 @@ import { aiInterpretationService } from '../services/aiInterpretationService';
 import jwt, { Secret } from 'jsonwebtoken';
 import { config } from '../config';
 import { getResult, getRecentSummaries } from '../models/RecordModel';
+import { getById } from '../models/UserModel';
+import { query } from '../utils/database';
 
 const router = Router();
 
@@ -37,13 +39,15 @@ router.post('/interpret', async (req: any, res: any): Promise<void> => {
   }
 
     let lengthLimit = 500
+    let persona: string | undefined
     try {
       const token = req.headers.authorization?.replace('Bearer ', '')
       if (token) {
         const payload: any = jwt.verify(token, config.jwt.secret as Secret)
         // 简单规则：VIP更长
-        const userRow: any = await (await import('../models/UserModel')).getById(Number(payload.id))
+        const userRow: any = await getById(Number(payload.id))
         if (userRow?.isVip) lengthLimit = 800; else lengthLimit = 200
+        persona = userRow?.aiPersona || undefined
       }
     } catch(e) {}
 
@@ -52,7 +56,8 @@ router.post('/interpret', async (req: any, res: any): Promise<void> => {
       question: question.trim(),
       type,
       userInfo,
-      lengthLimit
+      lengthLimit,
+      persona
     });
 
     return res.json({ status: 'success', data: interpretation });
@@ -66,15 +71,17 @@ router.post('/interpret/stream', async (req: any, res: any): Promise<void> => {
   try {
     const { cards, question, type, userInfo } = req.body;
     let lengthLimit = 500
+    let persona: string | undefined
     try {
       const token = req.headers.authorization?.replace('Bearer ', '')
       if (token) {
         const payload: any = jwt.verify(token, config.jwt.secret as Secret)
-        const userRow: any = await (await import('../models/UserModel')).getById(Number(payload.id))
+        const userRow: any = await getById(Number(payload.id))
         if (userRow?.isVip) lengthLimit = 800; else lengthLimit = 200
+        persona = userRow?.aiPersona || undefined
       }
     } catch(e) {}
-    const result = await aiInterpretationService.generateInterpretation({ cards, question, type, userInfo, lengthLimit })
+    const result = await aiInterpretationService.generateInterpretation({ cards, question, type, userInfo, lengthLimit, persona })
     res.setHeader('Content-Type', 'text/plain; charset=utf-8')
     res.setHeader('Transfer-Encoding', 'chunked')
     const text = result.interpretation
@@ -93,11 +100,14 @@ router.post('/chat/stream', async (req: any, res: any): Promise<void> => {
   try {
     const { recordId, question } = req.body
     let userId: number | null = null
+    let isVip = false
     try {
       const token = req.headers.authorization?.replace('Bearer ', '')
       if (token) {
         const payload: any = jwt.verify(token, config.jwt.secret as Secret)
         userId = Number(payload.id)
+        const u: any = await getById(userId)
+        isVip = !!u?.isVip
       }
     } catch(e) {}
     let context = ''
@@ -111,8 +121,20 @@ router.post('/chat/stream', async (req: any, res: any): Promise<void> => {
         context = `【当前占卜】${current.question}\n${(current.aiInterpretation || '').slice(0, 300)}\n\n` + context
       }
     }
+    if (!isVip && recordId) {
+      const rows: any = await query('SELECT follow_up_count AS c FROM divination_records WHERE id = ? LIMIT 1', [recordId])
+      const c = rows[0]?.c || 0
+      if (c >= 1) {
+        return res.status(403).end('追问次数已用完，升级VIP可无限追问')
+      }
+    }
     const merged = `用户追问：${question}\n\n历史上下文：\n${context}`
-    const result = await aiInterpretationService.generateInterpretation({ cards: [], question: merged, type: 'followup', userInfo: { nickname: '微信用户' }, lengthLimit: 600 })
+    let persona: string | undefined
+    if (userId) {
+      const u: any = await getById(userId)
+      persona = u?.aiPersona || undefined
+    }
+    const result = await aiInterpretationService.generateInterpretation({ cards: [], question: merged, type: 'followup', userInfo: { nickname: '微信用户' }, lengthLimit: 600, persona })
     res.setHeader('Content-Type', 'text/plain; charset=utf-8')
     res.setHeader('Transfer-Encoding', 'chunked')
     const text = result.interpretation
@@ -122,6 +144,9 @@ router.post('/chat/stream', async (req: any, res: any): Promise<void> => {
       await new Promise(r => setTimeout(r, 50))
     }
     res.end()
+    if (!isVip && recordId) {
+      await query('UPDATE divination_records SET follow_up_count = follow_up_count + 1 WHERE id = ?', [recordId])
+    }
   } catch (error) {
     res.status(500).end('AI追问服务暂时不可用')
   }

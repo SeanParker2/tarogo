@@ -52,6 +52,12 @@ export const config = {
   wechat: {
     appId: process.env.WECHAT_APP_ID || '',
     appSecret: process.env.WECHAT_APP_SECRET || '',
+    mchId: process.env.WECHAT_MCH_ID || '',
+    apiV3Key: process.env.WECHAT_API_V3_KEY || '',
+    merchantSerialNo: process.env.WECHAT_MCH_SERIAL_NO || '',
+    merchantPrivateKey: process.env.WECHAT_MCH_PRIVATE_KEY || '',
+    notifyUrl: process.env.WECHAT_PAY_NOTIFY_URL || '',
+    subscribeDailyTemplateId: process.env.WECHAT_SUBSCRIBE_TEMPLATE_DAILY || ''
   },
   
   // 文件上传配置

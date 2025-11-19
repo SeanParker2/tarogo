@@ -10,13 +10,14 @@ App({
       });
     }
 
-    // 全局数据
-    this.globalData = {
-      userInfo: null,
-      isVip: false,
-      apiBase: 'http://localhost:3000/api',
-      systemInfo: wx.getSystemInfoSync()
-    };
+  // 全局数据
+  this.globalData = {
+    userInfo: null,
+    isVip: false,
+    apiBase: 'http://localhost:3000/api',
+    systemInfo: wx.getSystemInfoSync(),
+    dailyTemplateId: ''
+  };
 
     // 检查登录状态
     this.checkLoginStatus();

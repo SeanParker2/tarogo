@@ -1,4 +1,6 @@
 import { Router } from 'express';
+import { getStats } from '../models/UserModel';
+import { getPersona, setPersona, setDailyPushEnabled } from '../models/UserModel';
 
 const router = Router();
 
@@ -105,32 +107,12 @@ router.get('/stats', async (req: any, res: any) => {
   try {
     const userId = req.user?.id;
 
-    // 模拟用户统计数据
-    const mockStats = {
-      totalDivinations: 15,
-      thisMonthDivinations: 5,
-      thisWeekDivinations: 2,
-      favoriteType: 'three',
-      mostAskedCategory: 'career',
-      averageRating: 4.5,
-      favoriteCards: [
-        { id: 1, name: '愚者', count: 3 },
-        { id: 2, name: '魔术师', count: 2 },
-        { id: 3, name: '女祭司', count: 2 }
-      ],
-      divinationTrend: [
-        { date: '2024-01-01', count: 1 },
-        { date: '2024-01-02', count: 2 },
-        { date: '2024-01-03', count: 0 },
-        { date: '2024-01-04', count: 1 },
-        { date: '2024-01-05', count: 3 }
-      ]
-    };
+    if (!userId) {
+      return res.status(401).json({ status: 'error', message: '未授权' });
+    }
 
-    return res.json({
-      status: 'success',
-      data: mockStats
-    });
+    const stats = await getStats(Number(userId));
+    return res.json({ status: 'success', data: stats });
   } catch (error) {
     return res.status(500).json({
       status: 'error',
@@ -139,6 +121,53 @@ router.get('/stats', async (req: any, res: any) => {
     });
   }
 });
+
+router.get('/persona', async (req: any, res: any) => {
+  try {
+    const userId = req.user?.id
+    if (!userId) return res.status(401).json({ status: 'error', message: '未授权' })
+    const persona = await getPersona(Number(userId))
+    res.json({ status: 'success', data: { persona: persona || null } })
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
+
+router.put('/persona', async (req: any, res: any) => {
+  try {
+    const userId = req.user?.id
+    const { persona } = req.body
+    if (!userId) return res.status(401).json({ status: 'error', message: '未授权' })
+    const allowed = ['warm','direct','psychology','mystic','毒舌型','治愈型','心理学型','神秘学型']
+    if (!persona || !allowed.includes(persona)) return res.status(400).json({ status: 'error', message: '无效的人格' })
+    await setPersona(Number(userId), persona)
+    res.json({ status: 'success', data: { persona } })
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
+
+router.post('/subscribe/daily', async (req: any, res: any) => {
+  try {
+    const userId = req.user?.id
+    if (!userId) return res.status(401).json({ status: 'error', message: '未授权' })
+    await setDailyPushEnabled(Number(userId), true)
+    res.json({ status: 'success', data: { enabled: true } })
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
+
+router.delete('/subscribe/daily', async (req: any, res: any) => {
+  try {
+    const userId = req.user?.id
+    if (!userId) return res.status(401).json({ status: 'error', message: '未授权' })
+    await setDailyPushEnabled(Number(userId), false)
+    res.json({ status: 'success', data: { enabled: false } })
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
 
 /**
  * @route   GET /api/user/favorites

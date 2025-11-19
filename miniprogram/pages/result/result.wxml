@@ -29,6 +29,8 @@
 
     <view class="footer">
       <button class="btn share" open-type="share">分享结果</button>
+      <button class="btn share" bindtap="generatePoster">生成海报</button>
+      <canvas id="poster-canvas" canvas-id="poster-canvas" type="2d" style="width:600rpx;height:900rpx;display:none"></canvas>
       <button class="btn home" bindtap="goHome">返回首页</button>
     </view>
   </view>

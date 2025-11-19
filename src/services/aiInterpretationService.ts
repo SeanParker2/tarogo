@@ -16,6 +16,7 @@ interface AIInterpretationRequest {
     gender?: string;
   };
   lengthLimit?: number;
+  persona?: string;
 }
 
 interface AIInterpretationResponse {
@@ -50,12 +51,12 @@ export class AIInterpretationService {
       
       // 尝试使用OpenAI
       if (this.openaiApiKey) {
-        return await this.callOpenAI(prompt);
+        return await this.callOpenAI(prompt, request.persona);
       }
       
       // OpenAI失败时尝试Claude
       if (this.claudeApiKey) {
-        return await this.callClaude(prompt);
+        return await this.callClaude(prompt, request.persona);
       }
       
       // 如果都没有配置，返回模拟数据
@@ -89,7 +90,8 @@ export class AIInterpretationService {
     };
 
     const limit = request.lengthLimit || 500
-    return `你是一位经验丰富且富有洞察力的塔罗牌占卜师。请基于用户抽到的塔罗牌，结合他们的问题，提供专业、温暖、有启发性的解读。
+    const personaStyle = this.personaStyle(request.persona)
+    return `你是一位经验丰富且富有洞察力的塔罗牌占卜师。${personaStyle}请基于用户抽到的塔罗牌，结合他们的问题，提供专业、温暖、有启发性的解读。
 
 占卜类型：${typeDescriptions[type as keyof typeof typeDescriptions] || type}
 用户问题：${question}
@@ -122,7 +124,7 @@ ${userInfo.gender ? `- 性别：${userInfo.gender}` : ''}` : ''}
   /**
    * 调用OpenAI API
    */
-  private async callOpenAI(prompt: string): Promise<AIInterpretationResponse> {
+  private async callOpenAI(prompt: string, persona?: string): Promise<AIInterpretationResponse> {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
@@ -130,7 +132,7 @@ ${userInfo.gender ? `- 性别：${userInfo.gender}` : ''}` : ''}
         messages: [
           {
             role: 'system',
-            content: '你是一位专业的塔罗牌占卜师，具有丰富的占卜经验和深刻的心理洞察力。'
+            content: this.personaSystemContent(persona)
           },
           {
             role: 'user',
@@ -177,7 +179,7 @@ ${userInfo.gender ? `- 性别：${userInfo.gender}` : ''}` : ''}
   /**
    * 调用Claude API
    */
-  private async callClaude(prompt: string): Promise<AIInterpretationResponse> {
+  private async callClaude(prompt: string, persona?: string): Promise<AIInterpretationResponse> {
     const response = await axios.post(
       'https://api.anthropic.com/v1/messages',
       {
@@ -186,7 +188,7 @@ ${userInfo.gender ? `- 性别：${userInfo.gender}` : ''}` : ''}
         messages: [
           {
             role: 'user',
-            content: prompt
+            content: `${this.personaSystemContent(persona)}\n\n${prompt}`
           }
         ],
       },
@@ -222,6 +224,36 @@ ${userInfo.gender ? `- 性别：${userInfo.gender}` : ''}` : ''}
         mood: 'neutral'
       };
     }
+  }
+
+  private personaStyle(persona?: string): string {
+    if (!persona) return ''
+    const map: Record<string, string> = {
+      'warm': '风格温暖治愈，注重肯定与鼓励。',
+      'direct': '风格直接果断，指出问题与行动建议。',
+      'psychology': '风格心理学化，强调情绪与认知模式。',
+      'mystic': '风格神秘学取向，融合象征与直觉。',
+      '毒舌型': '风格直接犀利，避免空话，强调行动。',
+      '治愈型': '风格温暖细腻，给予支持与陪伴。',
+      '心理学型': '风格理性分析，聚焦行为与认知。',
+      '神秘学型': '风格象征直觉，强调仪式与象征。'
+    }
+    return map[persona] || ''
+  }
+
+  private personaSystemContent(persona?: string): string {
+    const base = '你是一位专业的塔罗牌占卜师，具有丰富的占卜经验和深刻的心理洞察力。'
+    const map: Record<string, string> = {
+      'warm': base + '请以温暖治愈的口吻进行交流，注重支持与鼓励。',
+      'direct': base + '请以直接果断的口吻指出关键点与行动建议。',
+      'psychology': base + '请以心理学视角分析情绪与认知模式，提出干预建议。',
+      'mystic': base + '请以神秘学口吻阐释象征，注意仪式感与直觉。',
+      '毒舌型': base + '请以犀利直白的口吻，避免空话，强调行动。',
+      '治愈型': base + '请以温暖细腻的口吻，给予理解与支持。',
+      '心理学型': base + '请以理性分析，结合认知行为视角给出建议。',
+      '神秘学型': base + '请以神秘直觉的口吻，强调象征与仪式感。'
+    }
+    return map[persona || ''] || base
   }
 
   /**

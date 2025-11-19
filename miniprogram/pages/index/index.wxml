@@ -29,6 +29,19 @@
       </view>
     </view>
 
+    <!-- 好友合盘 -->
+    <view class="feature-card" bindtap="startRelationshipSession">
+      <view class="card-icon">
+        <text class="icon">👥</text>
+      </view>
+      <view class="card-content">
+        <text class="card-title">好友合盘</text>
+        <text class="card-desc">与好友共同抽牌，生成契合报告</text>
+      </view>
+      <view class="card-arrow">
+        <text class="arrow">→</text>
+      </view>
+    </view>
     <!-- 三张牌占卜 -->
     <view class="feature-card" bindtap="startThreeDivination" data-type="three">
       <view class="card-icon">

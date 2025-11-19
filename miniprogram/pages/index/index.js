@@ -74,6 +74,16 @@ Page({
     });
   },
 
+  async startRelationshipSession() {
+    try {
+      const res = await getApp().request({ url: '/divination/relationship/session/create', method: 'POST' })
+      const sessionId = res.data?.sessionId
+      if (!sessionId) return getApp().showToast('创建失败')
+      wx.setClipboardData({ data: `好友合盘会话ID：${sessionId}` })
+      getApp().showToast('会话ID已复制，分享给好友')
+    } catch(e) { getApp().showToast('创建失败') }
+  },
+
   // 查看今日塔罗详情
   viewDailyDetail() {
     if (this.data.dailyCard) {

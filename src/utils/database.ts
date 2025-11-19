@@ -195,13 +195,33 @@ export const initializeDatabase = async () => {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='抽牌结果表'
   `;
 
+  const createOrdersTable = `
+    CREATE TABLE IF NOT EXISTS orders (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      user_id INT,
+      package_id INT,
+      out_trade_no VARCHAR(64),
+      prepay_id VARCHAR(128),
+      amount INT,
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_user_id (user_id),
+      INDEX idx_out_trade_no (out_trade_no)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='订单表'
+  `;
+
   try {
     await query(createUsersTable);
     try { await query('ALTER TABLE users ADD COLUMN last_login_at DATETIME'); } catch(e) {}
+    try { await query("ALTER TABLE users ADD COLUMN ai_persona VARCHAR(50)"); } catch(e) {}
+    try { await query("ALTER TABLE users ADD COLUMN daily_push_enabled BOOLEAN DEFAULT FALSE"); } catch(e) {}
     await query(createTarotCardsTable);
     await query(createDivinationTypesTable);
     await query(createDivinationRecordsTable);
+    try { await query('ALTER TABLE divination_records ADD COLUMN follow_up_count INT DEFAULT 0'); } catch(e) {}
     await query(createCardDrawResultsTable);
+    await query(createOrdersTable);
     
     console.log('✅ 数据库表初始化成功');
     return true;

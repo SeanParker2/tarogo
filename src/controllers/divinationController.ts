@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { createRecord, addCardResults, getTypeIdByName, getHistory, getResult } from '../models/RecordModel';
 import { getById } from '../models/UserModel';
+import { cacheService } from '../services/cacheService';
+import { aiInterpretationService } from '../services/aiInterpretationService';
 
 const router = Router();
 
@@ -171,3 +173,50 @@ function getExpectedCardCount(type: string): number {
 }
 
 export default router;
+
+router.post('/relationship/session/create', async (req: any, res: any) => {
+  try {
+    const userId = req.user?.id
+    if (!userId) return res.status(401).json({ status: 'error', message: '未授权' })
+    const sessionId = 'rel_' + Date.now()
+    await cacheService.set(`relationship:session:${sessionId}:creator`, { userId }, { prefix: 'tarot:', ttl: 600 })
+    res.json({ status: 'success', data: { sessionId } })
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
+
+router.post('/relationship/session/submit', async (req: any, res: any) => {
+  try {
+    const userId = req.user?.id
+    const { sessionId, cards, question } = req.body
+    if (!userId) return res.status(401).json({ status: 'error', message: '未授权' })
+    if (!sessionId || !Array.isArray(cards) || cards.length !== 3) return res.status(400).json({ status: 'error', message: '参数错误' })
+    const creator = await cacheService.get<any>(`relationship:session:${sessionId}:creator`, { prefix: 'tarot:' })
+    if (!creator) return res.status(404).json({ status: 'error', message: '会话不存在或已过期' })
+    const key = creator.userId === userId ? `relationship:session:${sessionId}:A` : `relationship:session:${sessionId}:B`
+    await cacheService.set(key, { userId, cards, question }, { prefix: 'tarot:', ttl: 600 })
+    const A = await cacheService.get<any>(`relationship:session:${sessionId}:A`, { prefix: 'tarot:' })
+    const B = await cacheService.get<any>(`relationship:session:${sessionId}:B`, { prefix: 'tarot:' })
+    if (A && B) {
+      const payloadCards = [...A.cards, ...B.cards].map((c: any, i: number) => ({ name: c.name, englishName: c.englishName || '', isReversed: !!c.isReversed, position: String(i + 1) }))
+      const mergedQuestion = `关系合盘：甲方「${A.question || ''}」与乙方「${B.question || ''}」`;
+      const result = await aiInterpretationService.generateInterpretation({ cards: payloadCards, question: mergedQuestion, type: 'relationship', userInfo: { nickname: '好友合盘' }, lengthLimit: 800 })
+      await cacheService.set(`relationship:session:${sessionId}:result`, result, { prefix: 'tarot:', ttl: 600 })
+      return res.json({ status: 'success', data: { ready: true, result } })
+    }
+    res.json({ status: 'success', data: { ready: false } })
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
+
+router.get('/relationship/session/:id', async (req: any, res: any) => {
+  try {
+    const { id } = req.params
+    const result = await cacheService.get<any>(`relationship:session:${id}:result`, { prefix: 'tarot:' })
+    res.json({ status: 'success', data: { ready: !!result, result: result || null } })
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})

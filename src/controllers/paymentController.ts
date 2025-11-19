@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import crypto from 'crypto';
+import axios from 'axios';
 import { query } from '../utils/database';
 import { config } from '../config';
 
@@ -130,17 +131,46 @@ router.get('/packages', async (req, res) => {
 
 router.post('/prepay', async (req: any, res: any) => {
   try {
-    const { packageId } = req.body;
+    const userId = req.user?.id
+    const { packageId, description = 'AI塔罗占卜' } = req.body;
+    if (!userId) return res.status(401).json({ status: 'error', message: '未授权' })
     if (!packageId) return res.status(400).json({ status: 'error', message: '缺少套餐ID' });
-    if (!config.wechat?.appId) return res.status(500).json({ status: 'error', message: '微信支付未配置' });
-    const prepayId = 'mock_prepay_' + Date.now();
-    const timeStamp = String(Math.floor(Date.now()/1000));
-    const nonceStr = crypto.randomBytes(16).toString('hex');
-    const pkg = `prepay_id=${prepayId}`;
-    const signType = 'RSA';
-    const paySign = crypto.createHash('sha256').update(`${timeStamp}\n${nonceStr}\n${pkg}\n`).digest('hex');
-    await query('INSERT INTO orders (user_id, package_id, status) VALUES (?, ?, ?)', [req.user?.id || null, packageId, 'pending']).catch(()=>{})
-    res.json({ status: 'success', data: { timeStamp, nonceStr, package: pkg, signType, paySign } });
+    if (!config.wechat?.appId || !config.wechat?.mchId || !config.wechat?.merchantPrivateKey || !config.wechat?.merchantSerialNo || !config.wechat?.notifyUrl) {
+      return res.status(500).json({ status: 'error', message: '微信支付未配置完整' });
+    }
+
+    const userRows: any = await query('SELECT openid FROM users WHERE id = ? LIMIT 1', [userId])
+    const openid = userRows[0]?.openid
+    if (!openid) return res.status(400).json({ status: 'error', message: '缺少用户openid' })
+
+    const outTradeNo = 'TR' + Date.now()
+    const amount = 100
+    await query('INSERT INTO orders (user_id, package_id, out_trade_no, amount, status) VALUES (?, ?, ?, ?, ?)', [userId, packageId, outTradeNo, amount, 'pending']).catch(()=>{})
+
+    const url = 'https://api.mch.weixin.qq.com/v3/pay/transactions/jsapi'
+    const body = {
+      appid: config.wechat.appId,
+      mchid: config.wechat.mchId,
+      description,
+      out_trade_no: outTradeNo,
+      notify_url: config.wechat.notifyUrl,
+      amount: { total: amount, currency: 'CNY' },
+      payer: { openid }
+    }
+    const timestamp = String(Math.floor(Date.now()/1000))
+    const nonceStr = crypto.randomBytes(16).toString('hex')
+    const method = 'POST'
+    const urlPath = '/v3/pay/transactions/jsapi'
+    const message = `${method}\n${urlPath}\n${timestamp}\n${nonceStr}\n${JSON.stringify(body)}\n`
+    const sign = crypto.createSign('RSA-SHA256').update(message).sign(config.wechat.merchantPrivateKey, 'base64')
+    const authorization = `WECHATPAY2-SHA256-RSA2048 mchid="${config.wechat.mchId}",nonce_str="${nonceStr}",timestamp="${timestamp}",serial_no="${config.wechat.merchantSerialNo}",signature="${sign}"`
+    const resp = await axios.post(url, body, { headers: { Authorization: authorization, 'Content-Type': 'application/json' } })
+    const prepayId = resp.data?.prepay_id
+    if (!prepayId) return res.status(500).json({ status: 'error', message: '统一下单失败' })
+    const pkg = `prepay_id=${prepayId}`
+    const paySign = crypto.createSign('RSA-SHA256').update(`${timestamp}\n${nonceStr}\n${pkg}\n`).sign(config.wechat.merchantPrivateKey, 'base64')
+    await query('UPDATE orders SET prepay_id = ? WHERE out_trade_no = ?', [prepayId, outTradeNo]).catch(()=>{})
+    res.json({ status: 'success', data: { timeStamp: timestamp, nonceStr, package: pkg, signType: 'RSA', paySign } })
   } catch (error) {
     res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message });
   }
@@ -148,11 +178,12 @@ router.post('/prepay', async (req: any, res: any) => {
 
 router.post('/notify', async (req: any, res: any) => {
   try {
-    const { out_trade_no } = req.body || {}
-    if (out_trade_no) {
-      await query('UPDATE orders SET status=? WHERE id=?', ['paid', out_trade_no]).catch(()=>{})
+    const resource = req.body?.resource
+    const outTradeNo = req.body?.out_trade_no
+    if (resource?.ciphertext) {
+      await query('UPDATE orders SET status=? WHERE out_trade_no=?', ['paid', outTradeNo || '']).catch(()=>{})
     }
-    res.send('SUCCESS');
+    res.status(200).send('SUCCESS');
   } catch (error) {
     res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message });
   }
@@ -195,22 +226,7 @@ router.post('/create', async (req: any, res: any) => {
  * @desc    支付回调通知
  * @access  Public
  */
-router.post('/notify', async (req: any, res: any) => {
-  // 这里是微信支付回调
-  const { out_trade_no, result_code, total_fee } = req.body;
-
-  if (result_code === 'SUCCESS') {
-    // 支付成功，更新订单状态
-    console.log(`支付成功：订单号 ${out_trade_no}, 金额 ${total_fee}`);
-    
-    // 返回成功响应给微信
-    res.send('<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>');
-  } else {
-    // 支付失败
-    console.log(`支付失败：订单号 ${out_trade_no}`);
-    res.send('<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[支付失败]]></return_msg></xml>');
-  }
-});
+// 旧版XML通知接口保留示例，不再使用
 
 /**
  * @route   GET /api/payment/orders

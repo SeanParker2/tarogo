@@ -9,7 +9,8 @@ Page({
     aiLoading: true,
     aiNodes: [],
     aiRaw: '',
-    followUp: ''
+    followUp: '',
+    posterGenerating: false
   },
 
   onLoad(options) {
@@ -101,6 +102,37 @@ Page({
     wx.showModal({ title, content, showCancel: false })
   },
 
+  generatePoster() {
+    if (this.data.posterGenerating) return
+    this.setData({ posterGenerating: true })
+    const ctx = wx.createCanvasContext('poster-canvas', this)
+    const w = 600, h = 900
+    ctx.setFillStyle('#1f1147')
+    ctx.fillRect(0, 0, w, h)
+    ctx.setFillStyle('#8b5cf6')
+    ctx.setFontSize(28)
+    ctx.fillText('AI 塔罗 · 今日指引', 30, 60)
+    ctx.setFillStyle('#f5f3ff')
+    ctx.setFontSize(24)
+    ctx.fillText(`问题：${this.data.question}`, 30, 110)
+    const img = this.data.cards[0]?.imageUrl || this.data.cards[0]?.thumbnailUrl || ''
+    if (img) {
+      ctx.drawImage(img, 30, 140, 540, 700)
+    }
+    ctx.setFillStyle('#d8b4fe')
+    ctx.setFontSize(22)
+    ctx.fillText(`${this.data.spreadName}`, 30, 880)
+    ctx.draw(false, () => {
+      wx.canvasToTempFilePath({
+        canvasId: 'poster-canvas',
+        success: (res) => {
+          wx.saveImageToPhotosAlbum({ filePath: res.tempFilePath, success: () => { wx.showToast({ title: '海报已保存', icon: 'success' }) }, complete: () => { this.setData({ posterGenerating: false }) } })
+        },
+        fail: () => { this.setData({ posterGenerating: false }); wx.showToast({ title: '生成失败', icon: 'none' }) }
+      }, this)
+    })
+  }
+
   saveHistory(interpretation) {
     const history = wx.getStorageSync('divinationHistory') || []
     const record = { id: `local_${Date.now()}`, question: this.data.question, type: this.data.spread, cards: this.data.cards, aiInterpretation: interpretation, createdAt: new Date().toISOString() }
@@ -145,7 +177,12 @@ Page({
           that.setData({ aiNodes: nodes, aiRaw: acc })
         }
       },
-      success() { that.setData({ followUp: '' }) },
+      success(res) {
+        that.setData({ followUp: '' })
+        if (res.statusCode === 403) {
+          app.showToast('追问次数已用完，升级VIP可无限追问')
+        }
+      },
       fail() { app.showToast('追问失败，请稍后重试') }
     })
   },
