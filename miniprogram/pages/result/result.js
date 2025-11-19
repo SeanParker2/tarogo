@@ -131,7 +131,7 @@ Page({
         fail: () => { this.setData({ posterGenerating: false }); wx.showToast({ title: '生成失败', icon: 'none' }) }
       }, this)
     })
-  }
+  },
 
   saveHistory(interpretation) {
     const history = wx.getStorageSync('divinationHistory') || []

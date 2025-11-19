@@ -1,5 +1,4 @@
-// 抽卡页面逻辑（集成性能优化）
-const { imageLazyLoader, virtualList, memoryManager, performanceMonitor } = require('../../utils/performance');
+const { memoryManager, performanceMonitor } = require('../../utils/performance');
 
 Page({
   data: {
@@ -17,15 +16,7 @@ Page({
     completeBtnAnimation: {},
     currentStepText: '静心凝神，让象征卡片感受你的能量',
     
-    // 性能优化相关
     isLoading: false,
-    loadedImages: new Set(),
-    virtualData: {
-      visibleData: [],
-      startIndex: 0,
-      offsetY: 0,
-      totalHeight: 0
-    },
     page: 1,
     pageSize: 20,
     hasMore: true
@@ -45,46 +36,12 @@ Page({
       cardsToSelect: cardsToSelect
     });
     
-    // 初始化虚拟列表配置
-    virtualList.containerHeight = wx.getSystemInfoSync().windowHeight - 200;
-    virtualList.itemHeight = 220; // 卡片项高度
-    
     this.loadTarotCards();
-    
-    // 初始化图片懒加载
-    this.initLazyLoading();
   },
 
-  onUnload: function() {
-    // 清理资源
-    imageLazyLoader.clearCache();
-    memoryManager.clear();
-  },
+  onUnload: function() { memoryManager.clear(); },
 
   onPageScroll: function(e) {},
-
-  /**
-   * 处理虚拟列表滚动
-   */
-  handleVirtualScroll: function(scrollTop) {},
-
-  /**
-   * 初始化图片懒加载
-   */
-  initLazyLoading: function() {
-    // 使用防抖优化滚动事件
-    let scrollTimer = null;
-    
-    this.lazyLoadHandler = () => {
-      if (scrollTimer) clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => {
-        imageLazyLoader.lazyLoadImages(this, '.card-image');
-      }, 100);
-    };
-    
-    // 监听滚动事件
-    this.lazyLoadHandler();
-  },
 
   getCardsToSelect: function(spreadType) {
     const cardCounts = {
@@ -162,6 +119,7 @@ Page({
     const pageSize = this.data.pageSize
     const first = cards.slice(0, pageSize)
     this.setData({ allCards: cards, displayCards: first, page: 1, hasMore: cards.length > pageSize, isLoading: false })
+    this.preloadCoreCards(first)
   },
 
   onReachBottom: function() {
@@ -172,6 +130,12 @@ Page({
     const next = this.data.allCards.slice(start, end)
     if (next.length === 0) { this.setData({ hasMore: false }); return }
     this.setData({ displayCards: this.data.displayCards.concat(next), page: nextPage, hasMore: this.data.allCards.length > end })
+    this.preloadCoreCards(next)
+  },
+
+  preloadCoreCards: function(cards) {
+    const imgs = (cards || []).slice(0, 6).map(c => c.image).filter(Boolean)
+    imgs.forEach(src => { wx.getImageInfo({ src, success: () => {}, fail: () => {} }) })
   },
 
   loadMockCards: function() {

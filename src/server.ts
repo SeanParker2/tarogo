@@ -7,6 +7,7 @@ import { cacheService } from './services/cacheService';
 import { logger, stream } from './utils/logger';
 import axios from 'axios';
 import { query } from './utils/database';
+import schedule from 'node-schedule';
 
 // 路由导入
 import authRoutes from './controllers/authController';
@@ -117,12 +118,8 @@ const startServer = async () => {
       logger.info(`💾 Redis缓存: 已连接`);
     });
 
-    const scheduleDailyPush = async () => {
-      const now = new Date()
-      const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0)
-      if (now > target) target.setDate(target.getDate() + 1)
-      const delay = target.getTime() - now.getTime()
-      setTimeout(async () => {
+    const initScheduledJobs = () => {
+      schedule.scheduleJob('0 8 * * *', async () => {
         try {
           const rows: any = await query('SELECT id, openid FROM users WHERE daily_push_enabled = 1 AND openid IS NOT NULL')
           for (const u of rows) {
@@ -131,22 +128,13 @@ const startServer = async () => {
             const access = await axios.get(`https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${config.wechat.appId}&secret=${config.wechat.appSecret}`).then(r => r.data)
             const token = access?.access_token
             if (!token || !config.wechat.subscribeDailyTemplateId) continue
-            const data = {
-              touser: u.openid,
-              template_id: config.wechat.subscribeDailyTemplateId,
-              page: 'pages/index/index',
-              data: {
-                thing1: { value: card.name },
-                thing2: { value: '今日指引已就绪' }
-              }
-            }
+            const data = { touser: u.openid, template_id: config.wechat.subscribeDailyTemplateId, page: 'pages/index/index', data: { thing1: { value: card.name }, thing2: { value: '今日指引已就绪' } } }
             await axios.post(`https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${token}`, data).catch(()=>{})
           }
         } catch (e) {}
-        scheduleDailyPush()
-      }, delay)
+      })
     }
-    scheduleDailyPush()
+    initScheduledJobs()
 
     // 优雅关闭
     process.on('SIGTERM', async () => {

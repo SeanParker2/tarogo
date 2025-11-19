@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import axios from 'axios';
-import { query } from '../utils/database';
+import { query, transaction } from '../utils/database';
 import { config } from '../config';
 
 const router = Router();
@@ -221,19 +221,24 @@ router.post('/notify', async (req: any, res: any) => {
     if (!outTradeNo || !transactionId) {
       return res.status(400).json({ status: 'error', message: '通知数据缺少交易信息' })
     }
-    await query('UPDATE orders SET status=?, updated_at=CURRENT_TIMESTAMP WHERE out_trade_no=?', ['paid', outTradeNo]).catch(()=>{})
-    const ordRows: any = await query('SELECT user_id, package_id FROM orders WHERE out_trade_no = ? LIMIT 1', [outTradeNo])
-    const userId = ordRows[0]?.user_id
-    const pkg = Number(ordRows[0]?.package_id || 1)
-    if (userId) {
-      if (pkg === 2) {
-        await query('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 365 DAY) WHERE id = ?', [userId]).catch(()=>{})
-      } else if (pkg === 3) {
-        await query('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 36500 DAY) WHERE id = ?', [userId]).catch(()=>{})
-      } else {
-        await query('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE id = ?', [userId]).catch(()=>{})
+    await transaction(async (conn) => {
+      const [rows]: any = await conn.execute('SELECT status, user_id, package_id FROM orders WHERE out_trade_no = ? FOR UPDATE', [outTradeNo])
+      const row = rows?.[0]
+      if (!row) return
+      if (row.status === 'paid') return
+      await conn.execute('UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE out_trade_no = ?', ['paid', outTradeNo])
+      const userId = row.user_id
+      const pkg = Number(row.package_id || 1)
+      if (userId) {
+        if (pkg === 2) {
+          await conn.execute('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 365 DAY) WHERE id = ?', [userId])
+        } else if (pkg === 3) {
+          await conn.execute('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 36500 DAY) WHERE id = ?', [userId])
+        } else {
+          await conn.execute('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE id = ?', [userId])
+        }
       }
-    }
+    })
     res.status(200).send('SUCCESS')
   } catch (error) {
     res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })

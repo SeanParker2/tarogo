@@ -51,93 +51,23 @@
       <text class="selected-count">已选择: {{selectedCards.length}}/{{cardsToSelect}}</text>
     </view>
     
-    <!-- 虚拟列表滚动容器 -->
-    <scroll-view 
-      class="virtual-scroll-container" 
-      scroll-y="{{true}}" 
-      style="height: {{virtualData.totalHeight}}rpx;"
-      bindscroll="handleScroll"
-      scroll-top="{{scrollTop}}">
-      
-      <!-- 偏移占位符 -->
-      <view style="height: {{virtualData.offsetY}}rpx;"></view>
-      
-      <!-- 卡片网格 -->
-      <view class="cards-grid" wx:if="{{allCards.length <= 20}}">
+    <scroll-view class="card-scroll" scroll-y bindscrolltolower="onReachBottom">
+      <view class="cards-grid">
         <view class="card-item {{card.selected ? 'selected' : ''}} {{card.flipped ? 'flipped' : ''}}"
               wx:for="{{displayCards}}" wx:key="id"
               bindtap="selectCard"
               data-card="{{item}}"
               data-index="{{index}}"
               animation="{{card.animation}}">
-          
-          <!-- 卡牌背面 -->
-          <view class="card-face card-back-face">
-            <view class="card-back-pattern"></view>
-          </view>
-          
-          <!-- 卡牌正面 -->
+          <view class="card-face card-back-face"><view class="card-back-pattern"></view></view>
           <view class="card-face card-front-face">
-            <image 
-              class="card-image lazy-image" 
-              src="{{card.loaded ? item.image : '/images/placeholder-card.png'}}" 
-              mode="aspectFill"
-              data-src="{{item.image}}"
-              data-index="{{index}}"
-              bindload="onImageLoad"
-              binderror="onImageError">
-            </image>
-            <view class="card-info">
-              <text class="card-name">{{item.name}}</text>
-              <text class="card-type">{{item.suit}}</text>
-            </view>
+            <image class="card-image" lazy-load="{{true}}" src="{{item.image}}" mode="aspectFill"></image>
+            <view class="card-info"><text class="card-name">{{item.name}}</text><text class="card-type">{{item.suit}}</text></view>
           </view>
-          
-          <!-- 选中标记 -->
-          <view class="selection-mark" wx:if="{{card.selected}}">
-            <text class="selection-number">{{card.selectionNumber}}</text>
-          </view>
+          <view class="selection-mark" wx:if="{{card.selected}}"><text class="selection-number">{{card.selectionNumber}}</text></view>
         </view>
       </view>
-      
-      <!-- 虚拟列表卡片 -->
-      <view class="cards-grid" wx:else>
-        <view class="card-item {{card.selected ? 'selected' : ''}} {{card.flipped ? 'flipped' : ''}}"
-              wx:for="{{virtualData.visibleData}}" wx:key="id"
-              bindtap="selectCard"
-              data-card="{{item}}"
-              data-index="{{virtualData.startIndex + index}}"
-              style="position: absolute; top: {{(virtualData.startIndex + index) * 220}}rpx;"
-              animation="{{card.animation}}">
-          
-          <!-- 卡牌背面 -->
-          <view class="card-face card-back-face">
-            <view class="card-back-pattern"></view>
-          </view>
-          
-          <!-- 卡牌正面 -->
-          <view class="card-face card-front-face">
-            <image 
-              class="card-image lazy-image" 
-              src="{{card.loaded ? item.image : '/images/placeholder-card.png'}}" 
-              mode="aspectFill"
-              data-src="{{item.image}}"
-              data-index="{{virtualData.startIndex + index}}"
-              bindload="onImageLoad"
-              binderror="onImageError">
-            </image>
-            <view class="card-info">
-              <text class="card-name">{{item.name}}</text>
-              <text class="card-type">{{item.suit}}</text>
-            </view>
-          </view>
-          
-          <!-- 选中标记 -->
-          <view class="selection-mark" wx:if="{{card.selected}}">
-            <text class="selection-number">{{card.selectionNumber}}</text>
-          </view>
-        </view>
-      </view>
+      <view wx:if="{{isLoading}}" class="loading-more">加载中...</view>
     </scroll-view>
     
     <button class="action-btn confirm-btn" bindtap="confirmSelection" 
