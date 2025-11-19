@@ -16,7 +16,7 @@ Page({
     revealedCount: 0,
     shuffleAnimation: {},
     completeBtnAnimation: {},
-    currentStepText: '静心凝神，让塔罗牌感受你的能量',
+    currentStepText: '静心凝神，让象征卡片感受你的能量',
     
     // 性能优化
     isLoading: false,
@@ -249,9 +249,9 @@ Page({
     
     const prevStep = this.data.currentStep - 1;
     const stepTexts = {
-      1: '静心凝神，让塔罗牌感受你的能量',
+      1: '静心凝神，让象征卡片感受你的能量',
       2: '选择你感应最强的牌',
-      3: '翻开塔罗牌，揭示命运的奥秘'
+      3: '翻开卡面，洞察内在能量'
     };
     
     this.setData({
@@ -317,7 +317,7 @@ Page({
     }
     
     wx.showLoading({
-      title: '加载塔罗牌中...'
+      title: '加载象征卡片...'
     });
 
     wx.request({
@@ -341,7 +341,7 @@ Page({
           memoryManager.set(cacheKey, cards, 600000);
           this.processCards(cards);
           
-          console.log('塔罗牌加载完成', cards.length);
+          console.log('象征卡片加载完成', cards.length);
         } else {
           wx.showToast({
             title: '加载失败',
@@ -352,7 +352,7 @@ Page({
       fail: (error) => {
         wx.hideLoading();
         performanceMonitor.recordApiResponseTime('loadTarotCards', Date.now() - apiStartTime);
-        console.error('加载塔罗牌失败', error);
+        console.error('加载象征卡片失败', error);
         this.loadMockCards();
       }
     });
@@ -645,7 +645,7 @@ Page({
 
   onShareAppMessage: function() {
     return {
-      title: 'AI塔罗牌占卜 - 探索命运的奥秘',
+      title: 'AI心理洞察卡片 - 探索内在启示',
       path: '/pages/index/index'
     };
   }

@@ -150,6 +150,14 @@ class CacheService {
     }
   }
 
+  async getOrFetch<T>(key: string, fetcher: () => Promise<T>, options?: CacheOptions): Promise<T> {
+    const cached = await this.get<T>(key, options)
+    if (cached !== null && cached !== undefined) return cached as T
+    const data = await fetcher()
+    await this.set<T>(key, data, options)
+    return data
+  }
+
   async del(key: string, options?: CacheOptions): Promise<void> {
     if (!this.isConnected) {
       logger.warn('Redis not connected, skipping cache delete');

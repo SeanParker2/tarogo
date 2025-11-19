@@ -27,12 +27,12 @@ Page({
   // 更新页面标题
   updatePageTitle() {
     const titles = {
-      single: { title: '单张牌占卜', subtitle: '快速获得今日指引' },
-      three: { title: '三张牌占卜', subtitle: '探索过去、现在、未来' },
-      celtic: { title: '凯尔特十字', subtitle: '深度全面分析' },
-      love: { title: '爱情占卜', subtitle: '探索感情关系' },
-      career: { title: '事业占卜', subtitle: '职业发展指引' },
-      fortune: { title: '运势占卜', subtitle: '整体运势分析' }
+      single: { title: '单张卡面洞察', subtitle: '快速获得今日能量指引' },
+      three: { title: '三张卡面洞察', subtitle: '探索过去、现在、未来的能量' },
+      celtic: { title: '十点关系分析', subtitle: '结构化深度分析' },
+      love: { title: '情感关系洞察', subtitle: '探索连接与关系' },
+      career: { title: '职业发展洞察', subtitle: '职业成长方向' },
+      fortune: { title: '每日能量指引', subtitle: '整体能量分析' }
     };
 
     const titleInfo = titles[this.data.divinationType] || titles.single;
@@ -128,10 +128,10 @@ Page({
     }
 
     const app = getApp();
-    app.showLoading('正在准备占卜...');
+    app.showLoading('正在准备洞察...');
 
     try {
-      // 创建占卜记录
+      // 创建洞察记录
       const result = await app.request('/divination/create', 'POST', {
         question: this.data.question,
         type: this.data.selectedSpread,
@@ -146,12 +146,12 @@ Page({
           url: `/pages/drawing/drawing?divinationId=${divinationId}&type=${this.data.selectedSpread}`
         });
       } else {
-        throw new Error(result.message || '创建占卜失败');
+        throw new Error(result.message || '创建洞察失败');
       }
     } catch (error) {
-      console.error('创建占卜失败:', error);
+      console.error('创建洞察失败:', error);
       wx.showToast({
-        title: error.message || '创建占卜失败，请重试',
+        title: error.message || '创建洞察失败，请重试',
         icon: 'none'
       });
     } finally {
@@ -162,7 +162,7 @@ Page({
   // 分享功能
   onShareAppMessage() {
     return {
-      title: 'AI塔罗占卜 - 探索内心的智慧',
+      title: 'AI心理洞察卡片 - 探索内在启示',
       path: '/pages/question/question?type=' + this.data.divinationType,
       imageUrl: '/assets/images/share-question.jpg'
     };

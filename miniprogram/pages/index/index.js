@@ -16,7 +16,7 @@ Page({
     }
   },
 
-  // 加载今日塔罗
+  // 加载今日能量卡片
   async loadDailyCard() {
     try {
       const app = getApp();
@@ -28,7 +28,7 @@ Page({
         });
       }
     } catch (error) {
-      console.error('加载今日塔罗失败:', error);
+      console.error('加载今日能量卡片失败:', error);
     }
   },
 
@@ -67,7 +67,7 @@ Page({
     });
   },
 
-  // 运势占卜
+  // 每日能量指引
   startFortuneDivination(e) {
     wx.navigateTo({
       url: '/pages/question/question?type=fortune&category=fortune'
@@ -84,7 +84,7 @@ Page({
     } catch(e) { getApp().showToast('创建失败') }
   },
 
-  // 查看今日塔罗详情
+  // 查看今日能量详情
   viewDailyDetail() {
     if (this.data.dailyCard) {
       wx.navigateTo({
@@ -127,7 +127,7 @@ Page({
   // 分享功能
   onShareAppMessage() {
     return {
-      title: 'AI塔罗占卜 - 探索内心的智慧',
+      title: 'AI心理洞察卡片 - 探索内在启示',
       path: '/pages/index/index',
       imageUrl: '/assets/images/share-card.jpg'
     };
@@ -135,7 +135,7 @@ Page({
 
   onShareTimeline() {
     return {
-      title: 'AI塔罗占卜 - 探索内心的智慧',
+      title: 'AI心理洞察卡片 - 探索内在启示',
       query: '',
       imageUrl: '/assets/images/share-card.jpg'
     };

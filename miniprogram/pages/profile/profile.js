@@ -1,9 +1,14 @@
 const app = getApp()
 
 Page({
-  data: { userInfo: null, isVip: false, stats: {}, token: '', personas: ['治愈型','毒舌型','心理学型','神秘学型','warm','direct','psychology','mystic'], personaIndex: 0, currentPersonaLabel: '治愈型' },
+  data: { userInfo: null, isVip: false, stats: {}, token: '', personas: ['standard'], personaIndex: 0, currentPersonaLabel: 'standard' },
   onShow() {
     this.setData({ userInfo: app.globalData.userInfo, isVip: app.globalData.isVip, token: app.globalData.token || '' })
+    if (this.data.isVip) {
+      this.setData({ personas: ['standard','治愈型','毒舌型','心理学型','神秘学型','warm','direct','psychology','mystic'] })
+    } else {
+      this.setData({ personas: ['standard'], personaIndex: 0, currentPersonaLabel: 'standard' })
+    }
     this.loadStats()
     this.loadPersona()
   },
@@ -18,7 +23,7 @@ Page({
     if (!app.globalData.token) return
     try {
       const res = await app.request({ url: '/user/persona', method: 'GET' })
-      const persona = res.data?.persona || '治愈型'
+      const persona = res.data?.persona || 'standard'
       const idx = this.data.personas.indexOf(persona)
       this.setData({ personaIndex: idx >= 0 ? idx : 0, currentPersonaLabel: persona })
     } catch(e) {}

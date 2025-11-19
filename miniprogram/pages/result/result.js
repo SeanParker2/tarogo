@@ -29,12 +29,12 @@ Page({
   },
 
   onShareAppMessage() {
-    return { title: '我的塔罗占卜结果', path: '/pages/result/result' }
+    return { title: '我的洞察与建议', path: '/pages/result/result' }
   },
 
   getSpreadName(type) {
-    const map = { single: '单张解读', three: '三张牌阵', celtic: '凯尔特十字', relationship: '关系洞察', career: '事业方向' }
-    return map[type] || '占卜结果'
+    const map = { single: '单张卡面洞察', three: '三张卡面洞察', celtic: '十点关系分析', relationship: '关系洞察', career: '职业发展洞察' }
+    return map[type] || '洞察与建议'
   },
 
   startParticles() {
@@ -111,7 +111,7 @@ Page({
     ctx.fillRect(0, 0, w, h)
     ctx.setFillStyle('#8b5cf6')
     ctx.setFontSize(28)
-    ctx.fillText('AI 塔罗 · 今日指引', 30, 60)
+    ctx.fillText('AI 心理洞察 · 今日能量指引', 30, 60)
     ctx.setFillStyle('#f5f3ff')
     ctx.setFontSize(24)
     ctx.fillText(`问题：${this.data.question}`, 30, 110)

@@ -10,7 +10,7 @@
 
   <!-- 页面标题 -->
   <view class="page-header">
-    <text class="page-title">{{spreadType === 'single' ? '单张牌占卜' : spreadType === 'three' ? '三张牌占卜' : spreadType === 'celtic' ? '凯尔特十字占卜' : '选择你的塔罗牌'}}</text>
+    <text class="page-title">{{spreadType === 'single' ? '单张卡面洞察' : spreadType === 'three' ? '三张卡面洞察' : spreadType === 'celtic' ? '十点关系分析' : '选择你的象征卡片'}}</text>
     <text class="page-subtitle">{{currentStepText}}</text>
   </view>
 

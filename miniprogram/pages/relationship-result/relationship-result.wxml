@@ -1,0 +1,41 @@
+<view class="container">
+  <view class="header">
+    <text class="title">关系洞察报告</text>
+  </view>
+  <view class="participants" wx:if="{{A.user || B.user}}">
+    <view class="person" wx:if="{{A.user}}">
+      <image class="avatar" src="{{A.user.avatarUrl}}"></image>
+      <text class="name">{{A.user.nickname}}</text>
+    </view>
+    <text class="and">×</text>
+    <view class="person" wx:if="{{B.user}}">
+      <image class="avatar" src="{{B.user.avatarUrl}}"></image>
+      <text class="name">{{B.user.nickname}}</text>
+    </view>
+  </view>
+  <view class="cards" wx:if="{{A.cards && B.cards}}">
+    <view class="card-row">
+      <block wx:for="{{A.cards}}" wx:key="id">
+        <image class="card" src="{{item.imageUrl}}" mode="aspectFit"></image>
+      </block>
+    </view>
+    <view class="card-row">
+      <block wx:for="{{B.cards}}" wx:key="id">
+        <image class="card" src="{{item.imageUrl}}" mode="aspectFit"></image>
+      </block>
+    </view>
+  </view>
+  <view class="result" wx:if="{{result}}">
+    <text class="interpret">{{result.interpretation}}</text>
+    <view class="tags" wx:if="{{result.tags && result.tags.length}}">
+      <block wx:for="{{result.tags}}" wx:key="name">
+        <text class="tag">{{item.name}} {{item.score}}</text>
+      </block>
+    </view>
+  </view>
+  <view class="actions">
+    <button bindtap="generatePoster">生成海报</button>
+    <button open-type="share">分享报告</button>
+    <canvas id="rel-poster" canvas-id="rel-poster" type="2d" style="width:600rpx;height:900rpx;display:none"></canvas>
+  </view>
+</view>

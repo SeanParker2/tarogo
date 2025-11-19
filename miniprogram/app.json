@@ -7,12 +7,14 @@
     "pages/result/result",
     "pages/history/history",
     "pages/profile/profile",
-    "pages/auth/auth"
+    "pages/auth/auth",
+    "pages/relationship/relationship",
+    "pages/relationship-result/relationship-result"
   ],
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#6B46C1",
-    "navigationBarTitleText": "AI塔罗占卜",
+    "navigationBarTitleText": "AI心理洞察卡片",
     "navigationBarTextStyle": "white",
     "backgroundColor": "#F3F4F6"
   },

@@ -229,6 +229,7 @@ ${userInfo.gender ? `- 性别：${userInfo.gender}` : ''}` : ''}
   private personaStyle(persona?: string): string {
     if (!persona) return ''
     const map: Record<string, string> = {
+      'standard': '',
       'warm': '风格温暖治愈，注重肯定与鼓励。',
       'direct': '风格直接果断，指出问题与行动建议。',
       'psychology': '风格心理学化，强调情绪与认知模式。',
@@ -244,6 +245,7 @@ ${userInfo.gender ? `- 性别：${userInfo.gender}` : ''}` : ''}
   private personaSystemContent(persona?: string): string {
     const base = '你是一位专业的塔罗牌占卜师，具有丰富的占卜经验和深刻的心理洞察力。'
     const map: Record<string, string> = {
+      'standard': base,
       'warm': base + '请以温暖治愈的口吻进行交流，注重支持与鼓励。',
       'direct': base + '请以直接果断的口吻指出关键点与行动建议。',
       'psychology': base + '请以心理学视角分析情绪与认知模式，提出干预建议。',

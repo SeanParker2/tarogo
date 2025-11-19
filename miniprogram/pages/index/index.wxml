@@ -3,8 +3,8 @@
   <!-- 头部横幅 -->
   <view class="header-banner">
     <view class="banner-content">
-      <text class="banner-title">AI塔罗占卜</text>
-      <text class="banner-subtitle">探索内心的智慧，预见未来的可能</text>
+      <text class="banner-title">AI心理洞察卡片</text>
+      <text class="banner-subtitle">探索内心的智慧，洞察成长的方向</text>
     </view>
     <view class="banner-decoration">
       <view class="star star-1"></view>
@@ -21,8 +21,8 @@
         <text class="icon">🔮</text>
       </view>
       <view class="card-content">
-        <text class="card-title">单张牌占卜</text>
-        <text class="card-desc">快速获得今日指引</text>
+        <text class="card-title">单张卡面洞察</text>
+        <text class="card-desc">快速获得今日能量指引</text>
       </view>
       <view class="card-arrow">
         <text class="arrow">→</text>
@@ -35,77 +35,77 @@
         <text class="icon">👥</text>
       </view>
       <view class="card-content">
-        <text class="card-title">好友合盘</text>
-        <text class="card-desc">与好友共同抽牌，生成契合报告</text>
+        <text class="card-title">好友关系洞察</text>
+        <text class="card-desc">与好友共同选择卡面，生成契合报告</text>
       </view>
       <view class="card-arrow">
         <text class="arrow">→</text>
       </view>
     </view>
-    <!-- 三张牌占卜 -->
+    <!-- 三张卡面洞察 -->
     <view class="feature-card" bindtap="startThreeDivination" data-type="three">
       <view class="card-icon">
         <text class="icon">✨</text>
       </view>
       <view class="card-content">
-        <text class="card-title">三张牌占卜</text>
-        <text class="card-desc">过去、现在、未来</text>
+        <text class="card-title">三张卡面洞察</text>
+        <text class="card-desc">过去、现在、未来的能量</text>
       </view>
       <view class="card-arrow">
         <text class="arrow">→</text>
       </view>
     </view>
 
-    <!-- 凯尔特十字 -->
+    <!-- 十点关系分析 -->
     <view class="feature-card" bindtap="startCelticDivination" data-type="celtic">
       <view class="card-icon">
         <text class="icon">🌟</text>
       </view>
       <view class="card-content">
-        <text class="card-title">凯尔特十字</text>
-        <text class="card-desc">深度全面分析</text>
+        <text class="card-title">十点关系分析</text>
+        <text class="card-desc">结构化深度分析</text>
       </view>
       <view class="card-arrow">
         <text class="arrow">→</text>
       </view>
     </view>
 
-    <!-- 爱情占卜 -->
+    <!-- 情感关系洞察 -->
     <view class="feature-card" bindtap="startLoveDivination" data-type="love">
       <view class="card-icon">
         <text class="icon">💕</text>
       </view>
       <view class="card-content">
-        <text class="card-title">爱情占卜</text>
-        <text class="card-desc">感情关系指引</text>
+        <text class="card-title">情感关系洞察</text>
+        <text class="card-desc">关系与连接的建议</text>
       </view>
       <view class="card-arrow">
         <text class="arrow">→</text>
       </view>
     </view>
 
-    <!-- 事业占卜 -->
+    <!-- 职业发展洞察 -->
     <view class="feature-card" bindtap="startCareerDivination" data-type="career">
       <view class="card-icon">
         <text class="icon">💼</text>
       </view>
       <view class="card-content">
-        <text class="card-title">事业占卜</text>
-        <text class="card-desc">职业发展建议</text>
+        <text class="card-title">职业发展洞察</text>
+        <text class="card-desc">职业成长建议</text>
       </view>
       <view class="card-arrow">
         <text class="arrow">→</text>
       </view>
     </view>
 
-    <!-- 运势占卜 -->
+    <!-- 每日能量指引 -->
     <view class="feature-card" bindtap="startFortuneDivination" data-type="fortune">
       <view class="card-icon">
         <text class="icon">🍀</text>
       </view>
       <view class="card-content">
-        <text class="card-title">运势占卜</text>
-        <text class="card-desc">整体运势分析</text>
+        <text class="card-title">每日能量指引</text>
+        <text class="card-desc">整体能量分析</text>
       </view>
       <view class="card-arrow">
         <text class="arrow">→</text>
@@ -113,10 +113,10 @@
     </view>
   </view>
 
-  <!-- 今日塔罗 -->
+  <!-- 今日能量卡片 -->
   <view class="daily-tarot" wx:if="{{dailyCard}}">
     <view class="section-header">
-      <text class="section-title">今日塔罗</text>
+      <text class="section-title">今日能量卡片</text>
       <text class="section-more" bindtap="viewDailyDetail">查看详情</text>
     </view>
     <view class="daily-card">

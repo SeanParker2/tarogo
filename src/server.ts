@@ -83,6 +83,19 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/user', authMiddleware, userRoutes);
 app.use('/api/payment', paymentRoutes);
 
+app.get('/api/poster/:id', (req, res) => {
+  const { id } = req.params as any
+  cacheService.get<{ base64: string; mimeType: string }>(`poster:${id}`, { prefix: 'tarot:' })
+    .then((data) => {
+      if (!data) { res.status(404).send('Not Found'); return }
+      const buf = Buffer.from(data.base64, 'base64')
+      res.setHeader('Content-Type', data.mimeType || 'image/png')
+      res.setHeader('Cache-Control', 'public, max-age=604800')
+      res.send(buf)
+    })
+    .catch(() => { res.status(500).send('Server Error') })
+})
+
 // 错误处理中间件
 app.use(notFoundHandler);
 app.use(errorHandler);

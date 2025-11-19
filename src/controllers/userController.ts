@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import { getStats } from '../models/UserModel';
-import { getPersona, setPersona, setDailyPushEnabled } from '../models/UserModel';
+import { getStats, getPersona, setPersona, setDailyPushEnabled, getById } from '../models/UserModel';
 
 const router = Router();
 
@@ -138,8 +137,13 @@ router.put('/persona', async (req: any, res: any) => {
     const userId = req.user?.id
     const { persona } = req.body
     if (!userId) return res.status(401).json({ status: 'error', message: '未授权' })
-    const allowed = ['warm','direct','psychology','mystic','毒舌型','治愈型','心理学型','神秘学型']
+    const allowed = ['standard','warm','direct','psychology','mystic','毒舌型','治愈型','心理学型','神秘学型']
     if (!persona || !allowed.includes(persona)) return res.status(400).json({ status: 'error', message: '无效的人格' })
+    const user: any = await getById(Number(userId))
+    const isVip = !!user?.isVip
+    if (!isVip && persona !== 'standard') {
+      return res.status(403).json({ status: 'error', message: '非VIP仅可使用标准版人设' })
+    }
     await setPersona(Number(userId), persona)
     res.json({ status: 'success', data: { persona } })
   } catch (error) {

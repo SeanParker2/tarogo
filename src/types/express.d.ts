@@ -1,8 +1,7 @@
 import 'express'
 
-declare global {
-  namespace Express {
-    interface UserPayload { id: number | string }
-    interface Request { user?: UserPayload }
+declare module 'express-serve-static-core' {
+  interface Request {
+    user?: { id: number; isVip?: boolean }
   }
 }

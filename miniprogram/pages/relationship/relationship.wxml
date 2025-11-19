@@ -1,0 +1,32 @@
+<view class="container">
+  <view class="header">
+    <text class="title">好友关系洞察</text>
+    <text class="desc">输入会话ID或从分享进入</text>
+  </view>
+  <view wx:if="{{creator}}" class="creator">
+    <image class="avatar" src="{{creator.avatarUrl}}"></image>
+    <text class="name">来自 {{creator.nickname}} 的邀请</text>
+  </view>
+  <view class="session-input">
+    <input placeholder="会话ID" value="{{sessionId}}" bindinput="onSessionInput" />
+    <button bindtap="createSession">创建会话</button>
+  </view>
+  <view class="question">
+    <input placeholder="你的问题（可选）" value="{{question}}" bindinput="onQuestionInput" />
+  </view>
+  <view class="cards">
+    <button bindtap="drawCards" disabled="{{cards.length>0}}">选择三张卡面</button>
+    <view class="card-list" wx:if="{{cards.length}}">
+      <block wx:for="{{cards}}" wx:key="id">
+        <image class="card" src="{{item.imageUrl}}" mode="aspectFit"></image>
+      </block>
+    </view>
+  </view>
+  <view class="actions">
+    <button bindtap="submit" disabled="{{!sessionId || cards.length!==3}}">提交</button>
+    <button bindtap="checkResult" wx:if="{{sessionId}}">查看契合度报告</button>
+  </view>
+  <view wx:if="{{result}}" class="result">
+    <text>{{result.interpretation}}</text>
+  </view>
+</view>

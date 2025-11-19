@@ -57,7 +57,9 @@ export const config = {
     merchantSerialNo: process.env.WECHAT_MCH_SERIAL_NO || '',
     merchantPrivateKey: process.env.WECHAT_MCH_PRIVATE_KEY || '',
     notifyUrl: process.env.WECHAT_PAY_NOTIFY_URL || '',
-    subscribeDailyTemplateId: process.env.WECHAT_SUBSCRIBE_TEMPLATE_DAILY || ''
+    subscribeDailyTemplateId: process.env.WECHAT_SUBSCRIBE_TEMPLATE_DAILY || '',
+    platformSerialNo: process.env.WECHAT_PLATFORM_SERIAL_NO || '',
+    platformPublicKey: process.env.WECHAT_PLATFORM_PUBLIC_KEY || ''
   },
   
   // 文件上传配置

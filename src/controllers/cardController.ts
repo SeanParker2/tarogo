@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { getCards, getCardById, countCards } from '../models/CardModel';
 import { query } from '../utils/database';
 import { cacheService } from '../services/cacheService';
@@ -10,11 +10,11 @@ const router = Router();
  * @desc    获取塔罗牌列表
  * @access  Public
  */
-router.get('/list', async (req: any, res: any) => {
+router.get('/list', async (req: Request, res: Response) => {
   try {
-    const { type, suit, page = 1, limit = 78 } = req.query as any;
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const { type, suit } = req.query as any;
+    const pageNum = parseInt(String((req.query as any).page || 1));
+    const limitNum = parseInt(String((req.query as any).limit || 78));
     const cards = await getCards({ type, suit, page: pageNum, limit: limitNum });
     const total = await countCards({ type, suit });
 
@@ -44,7 +44,7 @@ router.get('/list', async (req: any, res: any) => {
  * @desc    获取单张塔罗牌详情
  * @access  Public
  */
-router.get('/detail/:id', async (req: any, res: any): Promise<any> => {
+router.get('/detail/:id', async (req: Request, res: Response): Promise<any> => {
   try {
     const { id } = req.params;
 
@@ -73,10 +73,10 @@ router.get('/detail/:id', async (req: any, res: any): Promise<any> => {
  * @desc    随机获取塔罗牌
  * @access  Public
  */
-router.get('/random', async (req: any, res: any): Promise<any> => {
+router.get('/random', async (req: Request, res: Response): Promise<any> => {
   try {
-    const { count = 1, type } = req.query as any;
-    const cardCount = parseInt(count as string);
+    const cardCount = parseInt(String((req.query as any).count || 1));
+    const type = (req.query as any).type as string | undefined;
     if (cardCount < 1 || cardCount > 78) {
       return res.status(400).json({ status: 'error', message: '卡牌数量必须在1-78之间' });
     }
@@ -107,9 +107,10 @@ router.get('/random', async (req: any, res: any): Promise<any> => {
  * @desc    搜索塔罗牌
  * @access  Public
  */
-router.get('/search', async (req: any, res: any): Promise<any> => {
+router.get('/search', async (req: Request, res: Response): Promise<any> => {
   try {
-    const { keyword, type } = req.query as any;
+    const keyword = String((req.query as any).keyword || '')
+    const type = (req.query as any).type as string | undefined
     if (!keyword) {
       return res.status(400).json({ status: 'error', message: '缺少搜索关键词' });
     }
@@ -137,17 +138,17 @@ router.get('/search', async (req: any, res: any): Promise<any> => {
   }
 });
 
-router.get('/daily', async (req: any, res: any) => {
+router.get('/daily', async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id || req.ip || 'guest'
+    const userId = (req as any).user?.id || req.ip || 'guest'
     const date = new Date().toISOString().slice(0,10)
     const key = `daily_card_user_${userId}_${date}`
-    const cached = await cacheService.get<any>(key)
-    if (cached) return res.json({ status: 'success', data: cached })
-    const rows: any = await query('SELECT id, name, english_name AS englishName, card_type AS type, image_url AS imageUrl, thumbnail_url AS thumbnailUrl FROM tarot_cards ORDER BY RAND() LIMIT 1')
-    const card = { ...rows[0], isReversed: Math.random() > 0.5 }
-    await cacheService.set(key, card, { ttl: 24 * 60 * 60 })
-    res.json({ status: 'success', data: card })
+    const data = await cacheService.getOrFetch<any>(key, async () => {
+      const rows: any = await query('SELECT id, name, english_name AS englishName, card_type AS type, image_url AS imageUrl, thumbnail_url AS thumbnailUrl FROM tarot_cards ORDER BY RAND() LIMIT 1')
+      const card = { ...rows[0], isReversed: Math.random() > 0.5 }
+      return card
+    }, { ttl: 24 * 60 * 60 })
+    res.json({ status: 'success', data })
   } catch (error) {
     res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
   }

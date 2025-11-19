@@ -178,16 +178,67 @@ router.post('/prepay', async (req: any, res: any) => {
 
 router.post('/notify', async (req: any, res: any) => {
   try {
-    const resource = req.body?.resource
-    const outTradeNo = req.body?.out_trade_no
-    if (resource?.ciphertext) {
-      await query('UPDATE orders SET status=? WHERE out_trade_no=?', ['paid', outTradeNo || '']).catch(()=>{})
+    const timestamp = req.header('Wechatpay-Timestamp') || req.header('wechatpay-timestamp')
+    const nonce = req.header('Wechatpay-Nonce') || req.header('wechatpay-nonce')
+    const signature = req.header('Wechatpay-Signature') || req.header('wechatpay-signature')
+    const serial = req.header('Wechatpay-Serial') || req.header('wechatpay-serial')
+    const body = JSON.stringify(req.body || {})
+
+    if (!timestamp || !nonce || !signature || !serial) {
+      return res.status(400).json({ status: 'error', message: '缺少验签头' })
     }
-    res.status(200).send('SUCCESS');
+    if (!config.wechat.platformPublicKey || !config.wechat.platformSerialNo) {
+      return res.status(500).json({ status: 'error', message: '平台证书未配置' })
+    }
+    if (serial !== config.wechat.platformSerialNo) {
+      return res.status(400).json({ status: 'error', message: '证书序列号不匹配' })
+    }
+    const verifier = crypto.createVerify('RSA-SHA256')
+    verifier.update(`${timestamp}\n${nonce}\n${body}\n`)
+    const ok = verifier.verify(config.wechat.platformPublicKey, signature, 'base64')
+    if (!ok) {
+      return res.status(401).json({ status: 'error', message: '签名验证失败' })
+    }
+
+    const resource = req.body?.resource
+    if (!resource?.ciphertext || !resource?.nonce) {
+      return res.status(400).json({ status: 'error', message: '通知内容不完整' })
+    }
+    const key = Buffer.from(config.wechat.apiV3Key)
+    const nonceBuf = Buffer.from(resource.nonce, 'utf8')
+    const associated = resource.associated_data ? Buffer.from(resource.associated_data, 'utf8') : Buffer.alloc(0)
+    const cipherBuf = Buffer.from(resource.ciphertext, 'base64')
+    const data = cipherBuf.slice(0, cipherBuf.length - 16)
+    const authTag = cipherBuf.slice(cipherBuf.length - 16)
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, nonceBuf)
+    if (associated.length) decipher.setAAD(associated)
+    decipher.setAuthTag(authTag)
+    let decoded = Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8')
+    const notify = JSON.parse(decoded)
+
+    const outTradeNo = notify.out_trade_no
+    const transactionId = notify.transaction_id
+    if (!outTradeNo || !transactionId) {
+      return res.status(400).json({ status: 'error', message: '通知数据缺少交易信息' })
+    }
+    await query('UPDATE orders SET status=?, updated_at=CURRENT_TIMESTAMP WHERE out_trade_no=?', ['paid', outTradeNo]).catch(()=>{})
+    const ordRows: any = await query('SELECT user_id, package_id FROM orders WHERE out_trade_no = ? LIMIT 1', [outTradeNo])
+    const userId = ordRows[0]?.user_id
+    const pkg = Number(ordRows[0]?.package_id || 1)
+    if (userId) {
+      if (pkg === 2) {
+        await query('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 365 DAY) WHERE id = ?', [userId]).catch(()=>{})
+      } else if (pkg === 3) {
+        await query('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 36500 DAY) WHERE id = ?', [userId]).catch(()=>{})
+      } else {
+        await query('UPDATE users SET is_vip = 1, vip_expire_at = DATE_ADD(NOW(), INTERVAL 30 DAY) WHERE id = ?', [userId]).catch(()=>{})
+      }
+    }
+    res.status(200).send('SUCCESS')
   } catch (error) {
-    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message });
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
   }
-});
+})
 
 /**
  * @route   POST /api/payment/create

@@ -3,6 +3,7 @@ import { createRecord, addCardResults, getTypeIdByName, getHistory, getResult } 
 import { getById } from '../models/UserModel';
 import { cacheService } from '../services/cacheService';
 import { aiInterpretationService } from '../services/aiInterpretationService';
+import { config } from '../config';
 
 const router = Router();
 
@@ -172,6 +173,21 @@ function getExpectedCardCount(type: string): number {
   return cardCounts[type] || 3;
 }
 
+function computeRelationshipTags(A: any, B: any, result: any): Array<{ name: string; score: number }> {
+  const reversedCount = [...(A?.cards || []), ...(B?.cards || [])].filter((c: any) => !!c.isReversed).length
+  const moodScore = result?.mood === 'positive' ? 20 : result?.mood === 'neutral' ? 10 : -10
+  const base = 50 + moodScore - reversedCount * 5
+  const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)))
+  const tags = [
+    { name: '共鸣', score: clamp(base + (Array.isArray(result?.keywords) ? result.keywords.length * 2 : 0)) },
+    { name: '互补', score: clamp(60 - Math.abs(reversedCount - 3) * 8) },
+    { name: '需沟通', score: clamp(40 + reversedCount * 10 + (result?.mood === 'negative' ? 20 : 0)) },
+    { name: '信任', score: clamp(base + (result?.advice && String(result.advice).includes('信任') ? 10 : 0)) },
+    { name: '成长', score: clamp(50 + ((result?.interpretation?.length || 0) % 20)) }
+  ]
+  return tags
+}
+
 export default router;
 
 router.post('/relationship/session/create', async (req: any, res: any) => {
@@ -202,8 +218,10 @@ router.post('/relationship/session/submit', async (req: any, res: any) => {
       const payloadCards = [...A.cards, ...B.cards].map((c: any, i: number) => ({ name: c.name, englishName: c.englishName || '', isReversed: !!c.isReversed, position: String(i + 1) }))
       const mergedQuestion = `关系合盘：甲方「${A.question || ''}」与乙方「${B.question || ''}」`;
       const result = await aiInterpretationService.generateInterpretation({ cards: payloadCards, question: mergedQuestion, type: 'relationship', userInfo: { nickname: '好友合盘' }, lengthLimit: 800 })
-      await cacheService.set(`relationship:session:${sessionId}:result`, result, { prefix: 'tarot:', ttl: 600 })
-      return res.json({ status: 'success', data: { ready: true, result } })
+      const tags = computeRelationshipTags(A, B, result)
+      const enriched = { ...result, tags }
+      await cacheService.set(`relationship:session:${sessionId}:result`, enriched, { prefix: 'tarot:', ttl: 600 })
+      return res.json({ status: 'success', data: { ready: true, result: enriched } })
     }
     res.json({ status: 'success', data: { ready: false } })
   } catch (error) {
@@ -218,5 +236,62 @@ router.get('/relationship/session/:id', async (req: any, res: any) => {
     res.json({ status: 'success', data: { ready: !!result, result: result || null } })
   } catch (error) {
     res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
+
+router.get('/relationship/session/:id/meta', async (req: any, res: any) => {
+  try {
+    const { id } = req.params
+    const creator = await cacheService.get<any>(`relationship:session:${id}:creator`, { prefix: 'tarot:' })
+    if (!creator?.userId) return res.status(404).json({ status: 'error', message: '会话不存在或已过期' })
+    const rows: any = await (await import('../utils/database')).query('SELECT nickname, avatar_url AS avatarUrl FROM users WHERE id = ? LIMIT 1', [creator.userId])
+    const meta = { sessionId: id, creator: { userId: creator.userId, nickname: rows[0]?.nickname || '好友', avatarUrl: rows[0]?.avatarUrl || '' } }
+    res.json({ status: 'success', data: meta })
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
+
+router.get('/relationship/session/:id/detail', async (req: any, res: any) => {
+  try {
+    const { id } = req.params
+    const A = await cacheService.get<any>(`relationship:session:${id}:A`, { prefix: 'tarot:' })
+    const B = await cacheService.get<any>(`relationship:session:${id}:B`, { prefix: 'tarot:' })
+    const result = await cacheService.get<any>(`relationship:session:${id}:result`, { prefix: 'tarot:' })
+    const db = await import('../utils/database')
+    let AUser: any = null
+    let BUser: any = null
+    if (A?.userId) {
+      const r: any = await db.query('SELECT nickname, avatar_url AS avatarUrl FROM users WHERE id = ? LIMIT 1', [A.userId])
+      AUser = { nickname: r[0]?.nickname || '甲方', avatarUrl: r[0]?.avatarUrl || '' }
+    }
+    if (B?.userId) {
+      const r: any = await db.query('SELECT nickname, avatar_url AS avatarUrl FROM users WHERE id = ? LIMIT 1', [B.userId])
+      BUser = { nickname: r[0]?.nickname || '乙方', avatarUrl: r[0]?.avatarUrl || '' }
+    }
+    res.json({ status: 'success', data: { A: { ...(A || {}), user: AUser }, B: { ...(B || {}), user: BUser }, result: result || null } })
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '服务器错误', error: (error as any).message })
+  }
+})
+
+router.post('/upload/poster', async (req: any, res: any) => {
+  try {
+    const userId = req.user?.id
+    if (!userId) return res.status(401).json({ status: 'error', message: '未授权' })
+    const { data } = req.body
+    if (!data || typeof data !== 'string') return res.status(400).json({ status: 'error', message: '缺少图片数据' })
+    const match = data.match(/^data:(image\/\w+);base64,(.+)$/)
+    const mimeType = match ? match[1] : 'image/png'
+    const base64 = match ? match[2] : data
+    if (!config.upload.allowedTypes.includes(mimeType)) return res.status(400).json({ status: 'error', message: '不支持的图片类型' })
+    const sizeBytes = Buffer.byteLength(base64, 'base64')
+    if (sizeBytes > config.upload.maxSize) return res.status(400).json({ status: 'error', message: '图片过大' })
+    const id = `poster_${Date.now()}_${Math.floor(Math.random() * 1000000)}`
+    await cacheService.set(`poster:${id}`, { base64, mimeType, userId }, { prefix: 'tarot:', ttl: 604800 })
+    const url = `${req.protocol}://${req.get('host')}/api/poster/${id}`
+    res.json({ status: 'success', data: { url, id } })
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: '上传失败', error: (error as any).message })
   }
 })
